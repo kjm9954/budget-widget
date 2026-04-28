@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>가계부</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" />
+  <style>
+    :root {
+      --color-text-primary: #37352f;
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f7f7f5;
+      --color-border-tertiary: #e9e9e7;
+      --border-radius-md: 6px;
+      --color-text-muted: #787774;
+      --color-warn-bg: #FCEBEB;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text-primary: #e6e6e6;
+        --color-background-primary: #191919;
+        --color-background-secondary: #1f1f1f;
+        --color-border-tertiary: #373737;
+        --color-text-muted: #9b9a97;
+        --color-warn-bg: #4a1f1f;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+    }
+
+    body {
+      padding: 12px 8px;
+      font-family: 'Galmuri9', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      color: var(--color-text-primary);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .widget {
+      max-width: 380px;
+      margin: 0 auto;
+      padding: 16px;
+      background: var(--color-background-primary);
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      position: relative;
+    }
+
+    h1 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+    }
+
+    h2 {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      color: var(--color-text-muted);
+      font-weight: normal;
+      letter-spacing: 0.02em;
+    }
+
+    section {
+      margin-bottom: 16px;
+    }
+    section:last-of-type { margin-bottom: 0; }
+
+    /* ---------- Input ---------- */
+    .input-section {
+      display: flex;
+      gap: 6px;
+    }
+
+    .input-section input {
+      flex: 1;
+      min-width: 0;
+      min-height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .input-section input:focus {
+      outline: none;
+      border-color: var(--color-text-muted);
+    }
+
+    .input-section button {
+      min-height: 36px;
+      min-width: 56px;
+      padding: 0 12px;
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-text-primary);
+      color: var(--color-background-primary);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .input-section button:hover { opacity: 0.85; }
+
+    /* ---------- Summary ---------- */
+    .month-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 12px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      margin-bottom: 8px;
+    }
+    .month-row .label {
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+    .month-row .value {
+      font-size: 14px;
+    }
+    .month-row .value strong {
+      font-size: 16px;
+    }
+    .month-remaining {
+      font-size: 11px;
+      color: var(--color-text-muted);
+    }
+
+    .week {
+      padding: 8px 10px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      margin-bottom: 4px;
+    }
+    .week.over { background: var(--color-warn-bg); }
+    .week-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+    .week-row .label { color: var(--color-text-muted); }
+
+    .progress {
+      height: 4px;
+      background: var(--color-border-tertiary);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      transition: width 0.2s;
+    }
+
+    /* ---------- Categories ---------- */
+    .category {
+      padding: 10px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      margin-bottom: 6px;
+    }
+    .cat-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      min-height: 24px;
+    }
+    .cat-name {
+      font-weight: bold;
+      flex: 1;
+      min-height: 20px;
+    }
+    .cat-budget-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 4px;
+      color: var(--color-text-muted);
+    }
+    .cat-budget-row .spent { color: var(--color-text-primary); font-weight: bold; }
+    .cat-keywords {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      margin-top: 6px;
+      min-height: 18px;
+      word-break: break-all;
+    }
+
+    [data-edit] {
+      cursor: pointer;
+      border-radius: 3px;
+      padding: 1px 3px;
+      margin: -1px -3px;
+    }
+    [data-edit]:hover {
+      background: var(--color-border-tertiary);
+    }
+
+    .cat-delete {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .cat-delete:hover {
+      background: var(--color-border-tertiary);
+      color: #e03e3e;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: normal;
+      flex-shrink: 0;
+    }
+
+    .add-cat-trigger {
+      width: 100%;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px dashed var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: transparent;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .add-cat-trigger:hover {
+      background: var(--color-background-secondary);
+      color: var(--color-text-primary);
+    }
+
+    .add-cat-panel {
+      margin-top: 6px;
+      padding: 10px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .add-cat-panel input {
+      min-height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .add-cat-panel input:focus {
+      outline: none;
+      border-color: var(--color-text-muted);
+    }
+    .panel-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .panel-actions button {
+      flex: 1;
+      min-height: 36px;
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .panel-actions .primary {
+      background: var(--color-text-primary);
+      color: var(--color-background-primary);
+      border-color: var(--color-text-primary);
+    }
+
+    /* ---------- Transactions ---------- */
+    .tx {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 10px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      margin-bottom: 4px;
+    }
+    .tx-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .tx-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+      flex-wrap: wrap;
+    }
+    .tx-amount { font-weight: bold; }
+    .tx-raw {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      word-break: break-all;
+    }
+    .tx-date {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+    .tx-delete {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .tx-delete:hover {
+      background: var(--color-border-tertiary);
+      color: #e03e3e;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 20px 10px;
+      color: var(--color-text-muted);
+      font-size: 12px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+    }
+
+    /* ---------- Inline edit ---------- */
+    .inline-edit {
+      min-height: 24px;
+      padding: 2px 6px;
+      border: 1px solid var(--color-text-muted);
+      border-radius: 3px;
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .inline-edit:focus { outline: none; }
+
+    /* ---------- Toast ---------- */
+    .toast {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 16px;
+      background: var(--color-text-primary);
+      color: var(--color-background-primary);
+      border-radius: var(--border-radius-md);
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      max-width: 90%;
+      text-align: center;
+      z-index: 10;
+      white-space: nowrap;
+    }
+    .toast.visible { opacity: 0.95; }
+  </style>
+</head>
+<body>
+  <main class="widget">
+    <header><h1>가계부</h1></header>
+
+    <section class="input-section">
+      <input id="entry" type="text" placeholder="예: 오늘 점심 김밥 5000" autocomplete="off" />
+      <button id="add-btn" type="button">추가</button>
+    </section>
+
+    <section class="summary">
+      <div class="month-row">
+        <span class="label">이번 달 지출</span>
+        <span class="value"></span>
+        <span class="month-remaining"></span>
+      </div>
+      <div class="weeks"></div>
+    </section>
+
+    <section class="categories">
+      <h2>카테고리</h2>
+      <div class="category-list"></div>
+      <button class="add-cat-trigger" type="button">+ 카테고리 추가</button>
+      <div class="add-cat-panel" hidden>
+        <input name="name" type="text" placeholder="이름" autocomplete="off" />
+        <input name="keywords" type="text" placeholder="키워드 (쉼표 구분)" autocomplete="off" />
+        <input name="budget" type="number" inputmode="numeric" placeholder="예산 (원)" />
+        <div class="panel-actions">
+          <button class="primary" type="button" data-action="confirm">추가</button>
+          <button class="ghost" type="button" data-action="cancel">취소</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="transactions">
+      <h2>최근 내역</h2>
+      <div class="tx-list"></div>
+      <div class="empty-state" hidden>아직 기록이 없어요</div>
+    </section>
+
+    <div class="toast"></div>
+  </main>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ===== Constants =====
+    var KEYS = {
+      CATEGORIES: 'budget_widget_v1_categories',
+      TRANSACTIONS: 'budget_widget_v1_transactions',
+      META: 'budget_widget_v1_meta'
+    };
+
+    var MONTH_LIMIT = 1000000;
+    var WEEK_LIMIT = 250000;
+
+    var CATEGORY_COLORS = ['brown', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'];
+    var COLOR_HEX = {
+      gray:   { rgb: '155,154,151', text: '#9b9a97' },
+      brown:  { rgb: '100,71,58',   text: '#a16f4d' },
+      orange: { rgb: '217,115,13',  text: '#d9730d' },
+      yellow: { rgb: '223,171,1',   text: '#dfab01' },
+      green:  { rgb: '15,123,108',  text: '#2ea043' },
+      blue:   { rgb: '11,110,153',  text: '#2383e2' },
+      purple: { rgb: '105,64,165',  text: '#9065c2' },
+      pink:   { rgb: '173,26,114',  text: '#c44ba0' },
+      red:    { rgb: '224,62,62',   text: '#e03e3e' }
+    };
+
+    var DATE_KEYWORDS = [
+      { word: '그저께', offset: -2 },
+      { word: '그제',   offset: -2 },
+      { word: '어제',   offset: -1 },
+      { word: '오늘',   offset:  0 }
+    ];
+
+    // ===== State =====
+    var state = {
+      categories: [],
+      transactions: [],
+      meta: { nextTxId: 1, nextCatId: 1 }
+    };
+
+    function defaultState() {
+      return {
+        categories: [
+          { id: 1, name: '카페', keywords: ['카페','커피','아메리카노','라떼','스타벅스'], budget: 100000, color: 'brown' },
+          { id: 2, name: '식비', keywords: ['식비','점심','저녁','아침','식당','김밥','분식','배달'], budget: 400000, color: 'orange' },
+          { id: 3, name: '교통', keywords: ['교통','택시','지하철','버스','주유'], budget: 100000, color: 'yellow' },
+          { id: 4, name: '쇼핑', keywords: ['쇼핑','옷','쿠팡','온라인','배송'], budget: 200000, color: 'green' },
+          { id: 5, name: '기타', keywords: [], budget: 200000, color: 'gray' }
+        ],
+        transactions: [],
+        meta: { nextTxId: 1, nextCatId: 6 }
+      };
+    }
+
+    function loadState() {
+      try {
+        var cats = localStorage.getItem(KEYS.CATEGORIES);
+        var txs  = localStorage.getItem(KEYS.TRANSACTIONS);
+        var meta = localStorage.getItem(KEYS.META);
+        if (cats && txs && meta) {
+          return {
+            categories: JSON.parse(cats),
+            transactions: JSON.parse(txs),
+            meta: JSON.parse(meta)
+          };
+        }
+      } catch (err) {
+        console.warn('가계부 데이터 로드 실패, 기본값 사용', err);
+      }
+      return defaultState();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(state.categories));
+        localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(state.transactions));
+        localStorage.setItem(KEYS.META, JSON.stringify(state.meta));
+      } catch (err) {
+        console.warn('가계부 데이터 저장 실패 (인메모리 유지)', err);
+      }
+    }
+
+    // ===== Utilities =====
+    function formatMoney(n) {
+      return Math.round(n).toLocaleString('ko-KR') + '원';
+    }
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    function ymd(d) {
+      return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+
+    function todayStr() { return ymd(new Date()); }
+
+    function offsetDate(offset) {
+      var d = new Date();
+      d.setDate(d.getDate() + offset);
+      return ymd(d);
+    }
+
+    function monthKey(dateStr) { return dateStr.slice(0, 7); }
+
+    function getWeekIndex(dateStr) {
+      var day = parseInt(dateStr.slice(8, 10), 10);
+      return Math.min(3, Math.floor((day - 1) / 7));
+    }
+
+    function currentMonthKey() {
+      var d = new Date();
+      return d.getFullYear() + '-' + pad2(d.getMonth() + 1);
+    }
+
+    function formatTxDate(dateStr) {
+      if (dateStr === todayStr()) return '오늘';
+      if (dateStr === offsetDate(-1)) return '어제';
+      if (dateStr === offsetDate(-2)) return '그저께';
+      var parts = dateStr.split('-');
+      return parseInt(parts[1], 10) + '월 ' + parseInt(parts[2], 10) + '일';
+    }
+
+    function getCategoryById(id) {
+      for (var i = 0; i < state.categories.length; i++) {
+        if (state.categories[i].id === id) return state.categories[i];
+      }
+      return null;
+    }
+
+    function getEtcCategory() {
+      for (var i = 0; i < state.categories.length; i++) {
+        if (state.categories[i].name === '기타') return state.categories[i];
+      }
+      return null;
+    }
+
+    function progressColor(ratio, baseHex) {
+      if (ratio >= 1) return COLOR_HEX.red.text;
+      if (ratio >= 0.8) return COLOR_HEX.yellow.text;
+      return baseHex;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function (ch) {
+        return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[ch];
+      });
+    }
+
+    function badgeHtml(category) {
+      var c = COLOR_HEX[category.color] || COLOR_HEX.gray;
+      return '<span class="badge" style="background-color: rgba(' + c.rgb + ', 0.25); color: ' + c.text + '">' + escapeHtml(category.name) + '</span>';
+    }
+
+    // ===== Parsers =====
+    function parseDate(text) {
+      for (var i = 0; i < DATE_KEYWORDS.length; i++) {
+        var k = DATE_KEYWORDS[i];
+        var idx = text.indexOf(k.word);
+        if (idx !== -1) {
+          return {
+            date: offsetDate(k.offset),
+            remainText: text.slice(0, idx) + text.slice(idx + k.word.length)
+          };
+        }
+      }
+      return { date: todayStr(), remainText: text };
+    }
+
+    function parseAmount(text) {
+      var re = /\d{1,3}(?:,\d{3})+|\d{3,}/;
+      var m = text.match(re);
+      if (!m) return { amount: null, remainText: text };
+      var amount = parseInt(m[0].replace(/,/g, ''), 10);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return { amount: null, remainText: text };
+      }
+      return {
+        amount: amount,
+        remainText: text.slice(0, m.index) + text.slice(m.index + m[0].length)
+      };
+    }
+
+    function matchCategory(text, categories) {
+      for (var i = 0; i < categories.length; i++) {
+        var c = categories[i];
+        if (c.keywords && c.keywords.length) {
+          for (var j = 0; j < c.keywords.length; j++) {
+            var k = c.keywords[j];
+            if (k && text.indexOf(k) !== -1) return c.id;
+          }
+        }
+      }
+      var etc = null;
+      for (var n = 0; n < categories.length; n++) {
+        if (categories[n].name === '기타') { etc = categories[n]; break; }
+      }
+      if (etc) return etc.id;
+      return categories.length > 0 ? categories[0].id : null;
+    }
+
+    function parseEntry(rawText) {
+      var trimmed = (rawText || '').trim();
+      if (!trimmed) return null;
+      var dateRes = parseDate(trimmed);
+      var amountRes = parseAmount(dateRes.remainText);
+      if (amountRes.amount === null) return null;
+      var categoryId = matchCategory(amountRes.remainText, state.categories);
+      if (categoryId === null) return null;
+      return {
+        amount: amountRes.amount,
+        date: dateRes.date,
+        categoryId: categoryId,
+        rawText: trimmed
+      };
+    }
+
+    // ===== DOM refs =====
+    var widget = document.querySelector('.widget');
+    var weeksEl = widget.querySelector('.weeks');
+    var monthValueEl = widget.querySelector('.month-row .value');
+    var monthRemainingEl = widget.querySelector('.month-remaining');
+    var categoryListEl = widget.querySelector('.category-list');
+    var txListEl = widget.querySelector('.tx-list');
+    var emptyStateEl = widget.querySelector('.empty-state');
+    var toastEl = widget.querySelector('.toast');
+    var addCatTrigger = widget.querySelector('.add-cat-trigger');
+    var addCatPanel = widget.querySelector('.add-cat-panel');
+    var entryInput = widget.querySelector('#entry');
+    var addBtn = widget.querySelector('#add-btn');
+
+    // ===== Rendering =====
+    function renderSummary() {
+      var month = currentMonthKey();
+      var monthTxs = state.transactions.filter(function (t) { return monthKey(t.date) === month; });
+      var monthSum = monthTxs.reduce(function (s, t) { return s + t.amount; }, 0);
+      var remaining = MONTH_LIMIT - monthSum;
+      monthValueEl.innerHTML = '<strong>' + formatMoney(monthSum) + '</strong> <span style="color: var(--color-text-muted)">/ ' + formatMoney(MONTH_LIMIT) + '</span>';
+      monthRemainingEl.textContent = remaining >= 0
+        ? '남은 예산 ' + formatMoney(remaining)
+        : formatMoney(-remaining) + ' 초과';
+
+      var weekSums = [0, 0, 0, 0];
+      monthTxs.forEach(function (t) { weekSums[getWeekIndex(t.date)] += t.amount; });
+      var weekRanges = ['1~7일', '8~14일', '15~21일', '22일 이후'];
+      weeksEl.innerHTML = weekSums.map(function (sum, i) {
+        var ratio = sum / WEEK_LIMIT;
+        var over = ratio >= 1;
+        var widthPct = Math.min(100, ratio * 100);
+        var color = progressColor(ratio, COLOR_HEX.gray.text);
+        return '<div class="week' + (over ? ' over' : '') + '">' +
+          '<div class="week-row"><span class="label">' + (i + 1) + '주차 (' + weekRanges[i] + ')</span><strong>' + formatMoney(sum) + '</strong></div>' +
+          '<div class="progress"><div class="progress-fill" style="width: ' + widthPct + '%; background: ' + color + '"></div></div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderCategories() {
+      var month = currentMonthKey();
+      categoryListEl.innerHTML = state.categories.map(function (cat) {
+        var sum = state.transactions
+          .filter(function (t) { return t.categoryId === cat.id && monthKey(t.date) === month; })
+          .reduce(function (s, t) { return s + t.amount; }, 0);
+        var ratio = cat.budget > 0 ? sum / cat.budget : 0;
+        var widthPct = cat.budget > 0 ? Math.min(100, ratio * 100) : 0;
+        var baseHex = (COLOR_HEX[cat.color] || COLOR_HEX.gray).text;
+        var color = progressColor(ratio, baseHex);
+        var kwText = (cat.keywords && cat.keywords.length) ? cat.keywords.join(', ') : '(키워드 없음)';
+        return '<div class="category" data-cat-id="' + cat.id + '">' +
+          '<div class="cat-header">' +
+            badgeHtml(cat) +
+            '<span class="cat-name" data-edit="name">' + escapeHtml(cat.name) + '</span>' +
+            '<button class="cat-delete" type="button" data-action="delete-cat" aria-label="카테고리 삭제">×</button>' +
+          '</div>' +
+          '<div class="cat-budget-row">' +
+            '<span class="spent">' + formatMoney(sum) + '</span>' +
+            '<span>예산 <span data-edit="budget">' + formatMoney(cat.budget) + '</span></span>' +
+          '</div>' +
+          '<div class="progress"><div class="progress-fill" style="width: ' + widthPct + '%; background: ' + color + '"></div></div>' +
+          '<div class="cat-keywords" data-edit="keywords">' + escapeHtml(kwText) + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderTransactions() {
+      var sorted = state.transactions.slice().sort(function (a, b) {
+        if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+        return b.id - a.id;
+      });
+      if (sorted.length === 0) {
+        txListEl.innerHTML = '';
+        emptyStateEl.hidden = false;
+      } else {
+        emptyStateEl.hidden = true;
+        txListEl.innerHTML = sorted.map(function (t) {
+          var cat = getCategoryById(t.categoryId);
+          return '<div class="tx" data-tx-id="' + t.id + '">' +
+            '<div class="tx-body">' +
+              '<div class="tx-head">' + (cat ? badgeHtml(cat) : '') + '<span class="tx-amount">' + formatMoney(t.amount) + '</span></div>' +
+              '<div class="tx-raw">' + escapeHtml(t.rawText) + '</div>' +
+            '</div>' +
+            '<span class="tx-date">' + escapeHtml(formatTxDate(t.date)) + '</span>' +
+            '<button class="tx-delete" type="button" data-action="delete-tx" aria-label="삭제">×</button>' +
+          '</div>';
+        }).join('');
+      }
+    }
+
+    function renderAll() {
+      renderSummary();
+      renderCategories();
+      renderTransactions();
+    }
+
+    // ===== Toast =====
+    var toastTimer = null;
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('visible');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toastEl.classList.remove('visible');
+      }, 1800);
+    }
+
+    // ===== Inline edit =====
+    function makeInlineEdit(targetEl, currentValue, onSave, type) {
+      if (targetEl.querySelector('.inline-edit')) return;
+      var input = document.createElement('input');
+      input.className = 'inline-edit';
+      input.type = (type === 'number') ? 'number' : 'text';
+      if (type === 'number') input.inputMode = 'numeric';
+      input.value = currentValue;
+
+      var cancelled = false;
+      var finalized = false;
+
+      function finalize(commit) {
+        if (finalized) return;
+        finalized = true;
+        if (commit) onSave(input.value);
+        else renderAll();
+      }
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          finalize(true);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelled = true;
+          finalize(false);
+        }
+      });
+      input.addEventListener('blur', function () {
+        if (cancelled) return;
+        finalize(true);
+      });
+
+      targetEl.innerHTML = '';
+      targetEl.appendChild(input);
+      input.focus();
+      input.select();
+    }
+
+    // ===== Action handlers =====
+    function handleAdd() {
+      var text = entryInput.value;
+      var entry = parseEntry(text);
+      if (!entry) {
+        showToast('금액을 못 찾았어요');
+        return;
+      }
+      var tx = {
+        id: state.meta.nextTxId,
+        amount: entry.amount,
+        date: entry.date,
+        categoryId: entry.categoryId,
+        rawText: entry.rawText
+      };
+      state.transactions.push(tx);
+      state.meta.nextTxId += 1;
+      saveState();
+      entryInput.value = '';
+      renderAll();
+    }
+
+    function handleDeleteTx(id) {
+      state.transactions = state.transactions.filter(function (t) { return t.id !== id; });
+      saveState();
+      renderAll();
+    }
+
+    function handleDeleteCategory(id) {
+      var cat = getCategoryById(id);
+      if (!cat) return;
+      var txCount = state.transactions.filter(function (t) { return t.categoryId === id; }).length;
+      var isEtc = cat.name === '기타';
+      var etc = getEtcCategory();
+      var moveToEtc = !isEtc && etc;
+
+      var msg;
+      if (moveToEtc) {
+        msg = '"' + cat.name + '" 카테고리를 삭제할까요?\n거래 ' + txCount + '개는 "기타"로 이동됩니다.';
+      } else {
+        msg = '"' + cat.name + '" 카테고리를 삭제할까요?';
+        if (txCount > 0) msg += '\n거래 ' + txCount + '개도 함께 삭제됩니다.';
+      }
+      if (!window.confirm(msg)) return;
+
+      if (moveToEtc) {
+        state.transactions.forEach(function (t) {
+          if (t.categoryId === id) t.categoryId = etc.id;
+        });
+      } else {
+        state.transactions = state.transactions.filter(function (t) { return t.categoryId !== id; });
+      }
+      state.categories = state.categories.filter(function (c) { return c.id !== id; });
+      saveState();
+      renderAll();
+    }
+
+    function pickNextColor() {
+      var used = {};
+      state.categories.forEach(function (c) { used[c.color] = true; });
+      for (var i = 0; i < CATEGORY_COLORS.length; i++) {
+        if (!used[CATEGORY_COLORS[i]]) return CATEGORY_COLORS[i];
+      }
+      return CATEGORY_COLORS[state.categories.length % CATEGORY_COLORS.length];
+    }
+
+    function clearAddCatPanel() {
+      addCatPanel.querySelector('input[name="name"]').value = '';
+      addCatPanel.querySelector('input[name="keywords"]').value = '';
+      addCatPanel.querySelector('input[name="budget"]').value = '';
+      addCatPanel.hidden = true;
+      addCatTrigger.hidden = false;
+    }
+
+    function handleAddCategoryConfirm() {
+      var name = addCatPanel.querySelector('input[name="name"]').value.trim();
+      var kwRaw = addCatPanel.querySelector('input[name="keywords"]').value.trim();
+      var budgetRaw = addCatPanel.querySelector('input[name="budget"]').value.trim();
+
+      if (!name) { showToast('이름을 입력해주세요'); return; }
+      var budget = parseInt(budgetRaw, 10);
+      if (!Number.isFinite(budget) || budget < 0) {
+        showToast('예산은 0 이상의 숫자여야 해요');
+        return;
+      }
+      var keywords = kwRaw
+        ? kwRaw.split(',').map(function (s) { return s.trim(); }).filter(Boolean)
+        : [];
+
+      var cat = {
+        id: state.meta.nextCatId,
+        name: name,
+        keywords: keywords,
+        budget: budget,
+        color: pickNextColor()
+      };
+      state.categories.push(cat);
+      state.meta.nextCatId += 1;
+      saveState();
+      clearAddCatPanel();
+      renderAll();
+    }
+
+    function handleEditCategoryField(id, field, newValueRaw) {
+      var cat = getCategoryById(id);
+      if (!cat) { renderAll(); return; }
+      if (field === 'name') {
+        var v = String(newValueRaw || '').trim();
+        if (v) cat.name = v;
+      } else if (field === 'budget') {
+        var num = parseInt(String(newValueRaw).replace(/[^\d-]/g, ''), 10);
+        if (Number.isFinite(num) && num >= 0) cat.budget = num;
+      } else if (field === 'keywords') {
+        var raw = String(newValueRaw || '').trim();
+        cat.keywords = raw
+          ? raw.split(',').map(function (s) { return s.trim(); }).filter(Boolean)
+          : [];
+      }
+      saveState();
+      renderAll();
+    }
+
+    // ===== Event bindings =====
+    addBtn.addEventListener('click', handleAdd);
+    entryInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAdd();
+      }
+    });
+
+    addCatTrigger.addEventListener('click', function () {
+      addCatTrigger.hidden = true;
+      addCatPanel.hidden = false;
+      addCatPanel.querySelector('input[name="name"]').focus();
+    });
+
+    addCatPanel.addEventListener('click', function (e) {
+      var action = e.target.dataset && e.target.dataset.action;
+      if (action === 'confirm') handleAddCategoryConfirm();
+      else if (action === 'cancel') clearAddCatPanel();
+    });
+
+    addCatPanel.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddCategoryConfirm();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        clearAddCatPanel();
+      }
+    });
+
+    categoryListEl.addEventListener('click', function (e) {
+      var catEl = e.target.closest('.category');
+      if (!catEl) return;
+      var catId = parseInt(catEl.dataset.catId, 10);
+
+      if (e.target.dataset && e.target.dataset.action === 'delete-cat') {
+        handleDeleteCategory(catId);
+        return;
+      }
+
+      var editTarget = e.target.closest('[data-edit]');
+      if (!editTarget || !catEl.contains(editTarget)) return;
+      var field = editTarget.dataset.edit;
+      var cat = getCategoryById(catId);
+      if (!cat) return;
+
+      var currentValue;
+      var type = 'text';
+      if (field === 'name') currentValue = cat.name;
+      else if (field === 'budget') { currentValue = cat.budget; type = 'number'; }
+      else if (field === 'keywords') currentValue = (cat.keywords || []).join(', ');
+      else return;
+
+      makeInlineEdit(editTarget, currentValue, function (newVal) {
+        handleEditCategoryField(catId, field, newVal);
+      }, type);
+    });
+
+    txListEl.addEventListener('click', function (e) {
+      if (!e.target.dataset || e.target.dataset.action !== 'delete-tx') return;
+      var txEl = e.target.closest('.tx');
+      if (!txEl) return;
+      var id = parseInt(txEl.dataset.txId, 10);
+      handleDeleteTx(id);
+    });
+
+    // ===== Init =====
+    state = loadState();
+    renderAll();
+  })();
+  </script>
+</body>
+</html>
