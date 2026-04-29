@@ -39,23 +39,49 @@
     }
 
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: transparent; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      height: 100%;
+    }
     body {
       padding: 12px 8px;
       font-family: 'Galmuri9', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
       color: var(--color-text-primary);
       font-size: var(--fs-base);
       line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     .widget {
       max-width: 380px;
+      width: 100%;
       margin: 0 auto;
       padding: 16px;
       background: var(--color-background-primary);
       border: 1px solid var(--color-border-tertiary);
       border-radius: var(--border-radius-md);
       position: relative;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .screen {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      /* 스크롤바를 살짝 얇게 */
+      scrollbar-width: thin;
+    }
+    .screen::-webkit-scrollbar { width: 6px; }
+    .screen::-webkit-scrollbar-thumb {
+      background: var(--color-border-tertiary);
+      border-radius: 3px;
     }
 
     /* ===== Header ===== */
@@ -64,11 +90,16 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 14px;
+      flex-shrink: 0;
     }
     .top-header h1 {
       margin: 0;
       font-size: var(--fs-h1);
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.15s;
     }
+    .top-header h1:hover { opacity: 0.7; }
     .header-right {
       display: flex;
       align-items: center;
@@ -102,6 +133,11 @@
       justify-content: center;
     }
     .icon-btn:hover { background: var(--color-background-secondary); }
+    .icon-btn.active {
+      background: var(--color-text-primary);
+      color: var(--color-background-primary);
+    }
+    .icon-btn.active:hover { opacity: 0.85; background: var(--color-text-primary); }
 
     /* ===== Sub header (stats/settings) ===== */
     .sub-header {
@@ -952,7 +988,7 @@
     </section>
 
     <section class="cat-donut-section">
-      <h2 class="section-title">카테고리 분포</h2>
+      <h2 class="section-title">카테고리 비율</h2>
       <div class="cat-donut-host"></div>
     </section>
 
@@ -1362,6 +1398,7 @@
   var screenStats = widget.querySelector('.screen-stats');
   var screenSettings = widget.querySelector('.screen-settings');
 
+  var titleEl = widget.querySelector('.top-header h1');
   var statsBtn = widget.querySelector('.stats-btn');
   var settingsBtn = widget.querySelector('.settings-btn');
   var backBtnStats = widget.querySelector('.back-btn-stats');
@@ -1815,10 +1852,15 @@
   }
 
   // ===== Screen toggle =====
+  function setActiveBtn(active) {
+    statsBtn.classList.toggle('active', active === 'stats');
+    settingsBtn.classList.toggle('active', active === 'settings');
+  }
   function showHome() {
     screenStats.hidden = true;
     screenSettings.hidden = true;
     screenHome.hidden = false;
+    setActiveBtn('home');
     renderHome();
   }
   function showStats() {
@@ -1826,12 +1868,14 @@
     screenHome.hidden = true;
     screenSettings.hidden = true;
     screenStats.hidden = false;
+    setActiveBtn('stats');
     renderStats();
   }
   function showSettingsScreen() {
     screenHome.hidden = true;
     screenStats.hidden = true;
     screenSettings.hidden = false;
+    setActiveBtn('settings');
     renderSettings();
   }
 
@@ -2086,6 +2130,7 @@
     weekEl.classList.toggle('collapsed');
   });
 
+  titleEl.addEventListener('click', showHome);
   statsBtn.addEventListener('click', showStats);
   settingsBtn.addEventListener('click', showSettingsScreen);
   backBtnStats.addEventListener('click', showHome);
