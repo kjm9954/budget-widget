@@ -69,6 +69,25 @@
       margin: 0;
       font-size: var(--fs-h1);
     }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .cloud-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      font-size: 14px;
+      color: var(--color-text-muted);
+      cursor: help;
+      user-select: none;
+    }
+    .cloud-status[data-tone="ok"] { color: var(--color-text-primary); }
+    .cloud-status[data-tone="pending"] { color: var(--color-caution); }
+    .cloud-status[data-tone="err"] { color: var(--color-warn); }
     .icon-btn {
       width: 36px;
       height: 36px;
@@ -581,7 +600,10 @@
 <main class="widget">
   <header class="top-header">
     <h1>가계부</h1>
-    <button class="icon-btn settings-btn" type="button" aria-label="설정">⚙</button>
+    <div class="header-right">
+      <span class="cloud-status" data-tone="" title="로컬 저장만">⌂</span>
+      <button class="icon-btn settings-btn" type="button" aria-label="설정">⚙</button>
+    </div>
   </header>
 
   <!-- ===== Main screen ===== -->
@@ -671,6 +693,11 @@
 (function () {
   'use strict';
 
+  // ===== Cloud sync constants =====
+  // Cloudflare Worker 배포 후 URL 입력. 'REPLACE-ME'로 두면 클라우드 동기화 비활성(로컬만).
+  var WORKER_URL = 'REPLACE-ME';
+  var SAVE_DEBOUNCE_MS = 1500;
+
   // ===== Constants =====
   var KEYS = {
     CATEGORIES: 'budget_widget_v1_categories',
@@ -707,6 +734,15 @@
     meta: { nextTxId: 1, nextCatId: 1, monthLimit: DEFAULT_MONTH_LIMIT, weekLimit: DEFAULT_WEEK_LIMIT }
   };
 
+  // ===== Cloud sync state =====
+  var cloudPageId = null;
+  var cloudKey = null;
+  var cloudEnabled = false;
+  var cloudSaveTimer = null;
+  var cloudInFlight = false;
+  var cloudPendingSave = false;
+  var cloudApplyingRemote = false;
+
   function defaultState() {
     return {
       categories: [
@@ -726,6 +762,7 @@
       if (!('emoji' in c)) c.emoji = '';
       return c;
     });
+    loaded.transactions = loaded.transactions || [];
     loaded.meta = loaded.meta || {};
     if (typeof loaded.meta.monthLimit !== 'number') loaded.meta.monthLimit = DEFAULT_MONTH_LIMIT;
     if (typeof loaded.meta.weekLimit !== 'number') loaded.meta.weekLimit = DEFAULT_WEEK_LIMIT;
@@ -734,7 +771,7 @@
     return loaded;
   }
 
-  function loadState() {
+  function loadStateLocal() {
     try {
       var cats = localStorage.getItem(KEYS.CATEGORIES);
       var txs  = localStorage.getItem(KEYS.TRANSACTIONS);
@@ -752,7 +789,7 @@
     return defaultState();
   }
 
-  function saveState() {
+  function saveStateLocal() {
     try {
       localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(state.categories));
       localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(state.transactions));
@@ -760,6 +797,124 @@
     } catch (err) {
       console.warn('가계부 데이터 저장 실패 (인메모리 유지)', err);
     }
+  }
+
+  function saveState() {
+    saveStateLocal();
+    if (cloudEnabled && !cloudApplyingRemote) {
+      cloudScheduleSave();
+    }
+  }
+
+  // ===== Cloud sync functions =====
+  function cloudReadParams() {
+    try {
+      var sp = new URLSearchParams(location.search);
+      var hashRaw = (location.hash || '').replace(/^#/, '');
+      var hp = new URLSearchParams(hashRaw);
+      cloudPageId = sp.get('np') || sp.get('page') || hp.get('np') || hp.get('page') || null;
+      cloudKey = sp.get('nk') || hp.get('nk') || null;
+      var workerOk = typeof WORKER_URL === 'string' && WORKER_URL && WORKER_URL.indexOf('REPLACE-ME') === -1;
+      cloudEnabled = !!(cloudPageId && workerOk);
+    } catch (e) {
+      cloudEnabled = false;
+    }
+  }
+
+  function cloudHeaders() {
+    var h = { 'Content-Type': 'application/json' };
+    if (cloudKey) h['X-Widget-Key'] = cloudKey;
+    return h;
+  }
+
+  function cloudUrl() {
+    return WORKER_URL.replace(/\/+$/, '') + '/?p=' + encodeURIComponent(cloudPageId);
+  }
+
+  function setCloudStatus(icon, tone, title) {
+    var el = widget && widget.querySelector('.cloud-status');
+    if (!el) return;
+    el.textContent = icon;
+    el.dataset.tone = tone || '';
+    if (title) el.title = title;
+  }
+
+  function cloudLoad() {
+    if (!cloudEnabled) return Promise.resolve(null);
+    setCloudStatus('⟳', 'pending', '동기화 중…');
+    return fetch(cloudUrl(), { method: 'GET', headers: cloudHeaders() })
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function(data) {
+        setCloudStatus('☁', 'ok', '동기화됨 · ' + new Date().toLocaleTimeString('ko-KR'));
+        return (data && data.state) || null;
+      })
+      .catch(function(e) {
+        setCloudStatus('!', 'err', '동기화 실패: ' + (e && e.message || e));
+        console.warn('[cloud] load failed:', e);
+        return null;
+      });
+  }
+
+  function cloudSaveNow() {
+    if (!cloudEnabled) return Promise.resolve();
+    if (cloudInFlight) { cloudPendingSave = true; return Promise.resolve(); }
+    cloudInFlight = true;
+    setCloudStatus('⟳', 'pending', '저장 중…');
+    return fetch(cloudUrl(), {
+      method: 'PUT',
+      headers: cloudHeaders(),
+      body: JSON.stringify(state)
+    })
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        setCloudStatus('☁', 'ok', '동기화됨 · ' + new Date().toLocaleTimeString('ko-KR'));
+      })
+      .catch(function(e) {
+        setCloudStatus('!', 'err', '저장 실패: ' + (e && e.message || e));
+        console.warn('[cloud] save failed:', e);
+      })
+      .then(function() {
+        cloudInFlight = false;
+        if (cloudPendingSave) {
+          cloudPendingSave = false;
+          cloudScheduleSave();
+        }
+      });
+  }
+
+  function cloudScheduleSave() {
+    if (!cloudEnabled) return;
+    if (cloudApplyingRemote) return;
+    if (cloudSaveTimer) clearTimeout(cloudSaveTimer);
+    cloudSaveTimer = setTimeout(cloudSaveNow, SAVE_DEBOUNCE_MS);
+  }
+
+  function initCloudSync(onRemoteApplied) {
+    cloudReadParams();
+    if (!cloudEnabled) {
+      var reason = !cloudPageId
+        ? '로컬 저장만 (URL에 ?np=... 없음)'
+        : '로컬 저장만 (Worker URL 미설정)';
+      setCloudStatus('⌂', '', reason);
+      return Promise.resolve(false);
+    }
+    cloudApplyingRemote = true;
+    return cloudLoad().then(function(remote) {
+      cloudApplyingRemote = false;
+      if (remote) {
+        if (typeof onRemoteApplied === 'function') onRemoteApplied(remote);
+      } else {
+        // 원격이 비었으면 현재 로컬 state를 한 번 업로드
+        cloudScheduleSave();
+      }
+      return true;
+    }).catch(function() {
+      cloudApplyingRemote = false;
+      return false;
+    });
   }
 
   // ===== Utilities =====
@@ -1274,8 +1429,18 @@
   });
 
   // ===== Init =====
-  state = loadState();
+  state = loadStateLocal();
   renderMain();
+
+  // 초기 로컬 렌더링 직후 클라우드 동기화 시도 (URL 파라미터·Worker URL 모두 있을 때만)
+  initCloudSync(function(remote) {
+    cloudApplyingRemote = true;
+    state = migrate(remote);
+    saveStateLocal();
+    cloudApplyingRemote = false;
+    renderMain();
+    if (!screenSettings.hidden) renderSettings();
+  });
 })();
 </script>
 </body>
