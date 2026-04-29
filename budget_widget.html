@@ -41,17 +41,17 @@
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; background: transparent; }
     body {
-      padding: 8px 6px;
+      padding: 12px 8px;
       font-family: 'Galmuri9', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
       color: var(--color-text-primary);
       font-size: var(--fs-base);
-      line-height: 1.45;
+      line-height: 1.5;
     }
 
     .widget {
       max-width: 380px;
       margin: 0 auto;
-      padding: 12px;
+      padding: 16px;
       background: var(--color-background-primary);
       border: 1px solid var(--color-border-tertiary);
       border-radius: var(--border-radius-md);
@@ -63,7 +63,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 8px;
+      margin-bottom: 14px;
     }
     .top-header h1 {
       margin: 0;
@@ -103,19 +103,33 @@
     }
     .icon-btn:hover { background: var(--color-background-secondary); }
 
+    /* ===== Sub header (stats/settings) ===== */
+    .sub-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .sub-header h2 {
+      margin: 0;
+      font-size: var(--fs-h1);
+      color: var(--color-text-primary);
+      font-weight: bold;
+    }
+
     /* ===== Month nav ===== */
     .month-nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 2px 6px;
+      padding: 6px 8px;
       background: var(--color-background-secondary);
       border-radius: var(--border-radius-md);
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .month-nav button {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       border: none;
       background: transparent;
       color: var(--color-text-primary);
@@ -144,22 +158,22 @@
 
     /* ===== Hero ===== */
     .hero {
-      padding: 12px 14px;
+      padding: 16px;
       background: var(--color-background-secondary);
       border-radius: var(--border-radius-md);
-      margin-bottom: 10px;
+      margin-bottom: 14px;
     }
     .hero-label {
       display: block;
       font-size: var(--fs-sm);
       color: var(--color-text-muted);
-      margin-bottom: 2px;
+      margin-bottom: 4px;
     }
     .hero-amount {
       display: block;
       font-size: var(--fs-hero);
       font-weight: bold;
-      line-height: 1.15;
+      line-height: 1.2;
       word-break: keep-all;
     }
     .hero-amount.over { color: var(--color-warn); }
@@ -167,15 +181,15 @@
       display: block;
       font-size: var(--fs-sm);
       color: var(--color-text-muted);
-      margin-top: 3px;
+      margin-top: 6px;
     }
 
     /* ===== Sections ===== */
-    section { margin-bottom: 12px; }
+    section { margin-bottom: 18px; }
     section:last-of-type { margin-bottom: 0; }
 
-    h2 {
-      margin: 0 0 6px 0;
+    h2.section-title {
+      margin: 0 0 8px 0;
       font-size: var(--fs-sm);
       color: var(--color-text-muted);
       font-weight: normal;
@@ -185,13 +199,13 @@
     /* ===== Quick dates ===== */
     .quick-dates {
       display: flex;
-      gap: 4px;
-      margin-bottom: 6px;
+      gap: 6px;
+      margin-bottom: 8px;
     }
     .quick-dates button {
       flex: 1;
-      min-height: 30px;
-      padding: 0 8px;
+      min-height: 36px;
+      padding: 0 10px;
       border: 1px solid var(--color-border-tertiary);
       border-radius: var(--border-radius-md);
       background: transparent;
@@ -213,8 +227,8 @@
     .input-row input {
       flex: 1;
       min-width: 0;
-      min-height: 38px;
-      padding: 0 10px;
+      min-height: 44px;
+      padding: 0 12px;
       border: 1px solid var(--color-border-tertiary);
       border-radius: var(--border-radius-md);
       background: var(--color-background-primary);
@@ -227,9 +241,9 @@
       border-color: var(--color-text-muted);
     }
     .input-row button {
-      min-height: 38px;
-      min-width: 56px;
-      padding: 0 12px;
+      min-height: 44px;
+      min-width: 64px;
+      padding: 0 14px;
       border: 1px solid var(--color-text-primary);
       border-radius: var(--border-radius-md);
       background: var(--color-text-primary);
@@ -241,12 +255,225 @@
     }
     .input-row button:hover { opacity: 0.85; }
 
-    /* ===== Weeks ===== */
-    .week {
-      padding: 8px 12px;
+    /* ===== Category mini bars (home) ===== */
+    .cat-bars {
+      padding: 12px 14px;
       background: var(--color-background-secondary);
       border-radius: var(--border-radius-md);
-      margin-bottom: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .cat-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: var(--fs-sm);
+    }
+    .cat-bar-row .name {
+      width: 78px;
+      flex-shrink: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cat-bar-row .bar {
+      flex: 1;
+      height: 8px;
+      background: var(--color-progress-track);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .cat-bar-row .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.2s;
+    }
+    .cat-bar-row .amount {
+      width: 76px;
+      text-align: right;
+      flex-shrink: 0;
+      font-weight: bold;
+      color: var(--color-text-primary);
+    }
+    .cat-bars-empty {
+      padding: 16px 14px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: var(--fs-sm);
+    }
+
+    /* ===== Pace / forecast card (home) ===== */
+    .pace-card {
+      padding: 12px 14px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+    }
+    .pace-row {
+      display: flex;
+      gap: 8px;
+      font-size: var(--fs-sm);
+      margin-bottom: 8px;
+    }
+    .pace-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .pace-col .pace-label {
+      color: var(--color-text-muted);
+      font-size: var(--fs-xs);
+    }
+    .pace-col .pace-value {
+      font-weight: bold;
+      font-size: var(--fs-base);
+    }
+    .pace-col.over .pace-value { color: var(--color-warn); }
+    .pace-col.under .pace-value { color: #2ea043; }
+    .pace-forecast {
+      font-size: var(--fs-sm);
+      color: var(--color-text-muted);
+      padding-top: 8px;
+      border-top: 1px solid var(--color-border-tertiary);
+    }
+    .pace-forecast.warn { color: var(--color-warn); }
+    .pace-forecast.ok { color: #2ea043; }
+
+    /* ===== Donut chart (stats) ===== */
+    .cat-summary {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+    }
+    .donut-wrap {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      flex-shrink: 0;
+    }
+    .donut {
+      width: 100%;
+      height: 100%;
+    }
+    .donut-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .donut-center .pct {
+      font-weight: bold;
+      font-size: 20px;
+      line-height: 1;
+    }
+    .donut-center .label {
+      font-size: 10px;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+    .cat-labels {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: var(--fs-sm);
+      min-width: 0;
+    }
+    .cat-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .cat-label .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .cat-label .name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cat-label .pct {
+      font-weight: bold;
+      color: var(--color-text-primary);
+      flex-shrink: 0;
+    }
+    .cat-summary-empty {
+      padding: 20px 14px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: var(--fs-sm);
+    }
+
+    /* ===== Weekday bars (stats) ===== */
+    .weekday-card {
+      padding: 12px 14px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+    }
+    .weekday-bars {
+      display: flex;
+      gap: 4px;
+      align-items: flex-end;
+      height: 60px;
+      margin-bottom: 8px;
+    }
+    .weekday-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+      height: 100%;
+    }
+    .weekday-col .bar {
+      width: 80%;
+      background: var(--color-text-primary);
+      border-radius: 3px 3px 0 0;
+      min-height: 2px;
+      transition: height 0.2s;
+    }
+    .weekday-col.weekend .bar {
+      background: var(--color-warn);
+      opacity: 0.6;
+    }
+    .weekday-col .day {
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+    }
+    .weekday-col.weekend .day {
+      color: var(--color-warn);
+    }
+    .weekday-summary {
+      font-size: var(--fs-sm);
+      color: var(--color-text-muted);
+      text-align: center;
+      padding-top: 8px;
+      border-top: 1px solid var(--color-border-tertiary);
+    }
+
+    /* ===== Weeks ===== */
+    .week {
+      padding: 12px 14px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      margin-bottom: 8px;
       cursor: pointer;
     }
     .week.over { background: var(--color-warn-bg); }
@@ -273,7 +500,7 @@
       text-align: right;
     }
     .week.collapsed .chevron { transform: rotate(-90deg); }
-    .week-detail { margin-top: 6px; }
+    .week-detail { margin-top: 10px; }
     .week.collapsed .week-detail { display: none; }
 
     .progress {
@@ -288,18 +515,18 @@
       border-radius: 3px;
     }
 
-    /* ===== Categories (main view) ===== */
+    /* ===== Categories (stats view) ===== */
     .category-view {
-      padding: 8px 12px;
+      padding: 12px 14px;
       background: var(--color-background-secondary);
       border-radius: var(--border-radius-md);
-      margin-bottom: 4px;
+      margin-bottom: 8px;
     }
     .cv-header {
       display: flex;
       align-items: baseline;
       gap: 8px;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
     }
     .cv-emoji {
       font-size: 16px;
@@ -322,22 +549,22 @@
     }
 
     /* ===== Transactions ===== */
-    .tx-group { margin-bottom: 8px; }
+    .tx-group { margin-bottom: 14px; }
     .tx-group:last-child { margin-bottom: 0; }
     .tx-group-header {
       font-size: var(--fs-sm);
       color: var(--color-text-muted);
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       padding-left: 4px;
     }
     .tx {
       display: flex;
       align-items: flex-start;
-      gap: 6px;
-      padding: 8px 12px;
+      gap: 8px;
+      padding: 12px 14px;
       background: var(--color-background-secondary);
       border-radius: var(--border-radius-md);
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
     .tx-body {
       flex: 1;
@@ -378,13 +605,13 @@
     /* ===== Empty state ===== */
     .empty-state {
       text-align: center;
-      padding: 20px 16px;
+      padding: 32px 16px;
       background: var(--color-background-secondary);
       border-radius: var(--border-radius-md);
     }
     .empty-icon {
-      font-size: 36px;
-      margin-bottom: 4px;
+      font-size: 48px;
+      margin-bottom: 8px;
       line-height: 1;
     }
     .empty-message {
@@ -406,19 +633,6 @@
 
     /* ===== Settings screen ===== */
     .screen[hidden] { display: none; }
-
-    .settings-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-    .settings-header h2 {
-      margin: 0;
-      font-size: var(--fs-h1);
-      color: var(--color-text-primary);
-      font-weight: bold;
-    }
 
     .settings-section { margin-bottom: 22px; }
     .settings-section:last-child { margin-bottom: 0; }
@@ -673,18 +887,13 @@
     <h1>가계부</h1>
     <div class="header-right">
       <span class="cloud-status" data-tone="" title="로컬 저장만">⌂</span>
+      <button class="icon-btn stats-btn" type="button" aria-label="현황">📊</button>
       <button class="icon-btn settings-btn" type="button" aria-label="설정">⚙</button>
     </div>
   </header>
 
-  <!-- ===== Main screen ===== -->
-  <div class="screen screen-main">
-    <div class="month-nav">
-      <button class="nav-prev" type="button" aria-label="이전 달">←</button>
-      <span class="nav-label">2026년 4월</span>
-      <button class="nav-next" type="button" aria-label="다음 달">→</button>
-    </div>
-
+  <!-- ===== Home screen ===== -->
+  <div class="screen screen-home">
     <section class="hero">
       <span class="hero-label">남은 예산</span>
       <span class="hero-amount">0원</span>
@@ -703,18 +912,18 @@
       </div>
     </section>
 
-    <section class="weeks-section">
-      <h2>주차별 지출</h2>
-      <div class="weeks"></div>
+    <section class="cat-bars-section">
+      <h2 class="section-title">카테고리 비율</h2>
+      <div class="cat-bars-host"></div>
     </section>
 
-    <section class="categories-section">
-      <h2>카테고리별 지출</h2>
-      <div class="category-list"></div>
+    <section class="pace-section">
+      <h2 class="section-title">지출 페이스</h2>
+      <div class="pace-host"></div>
     </section>
 
     <section class="transactions">
-      <h2>최근 내역</h2>
+      <h2 class="section-title">최근 내역</h2>
       <div class="tx-list"></div>
       <div class="empty-state" hidden>
         <div class="empty-icon">📒</div>
@@ -723,10 +932,50 @@
     </section>
   </div>
 
+  <!-- ===== Stats screen ===== -->
+  <div class="screen screen-stats" hidden>
+    <header class="sub-header">
+      <button class="icon-btn back-btn-stats" type="button" aria-label="뒤로">←</button>
+      <h2>현황</h2>
+    </header>
+
+    <div class="month-nav">
+      <button class="nav-prev" type="button" aria-label="이전 달">←</button>
+      <span class="nav-label">2026년 4월</span>
+      <button class="nav-next" type="button" aria-label="다음 달">→</button>
+    </div>
+
+    <section class="hero stats-hero">
+      <span class="hero-label">남은 예산</span>
+      <span class="hero-amount stats-hero-amount">0원</span>
+      <span class="hero-meta stats-hero-meta"></span>
+    </section>
+
+    <section class="cat-donut-section">
+      <h2 class="section-title">카테고리 분포</h2>
+      <div class="cat-donut-host"></div>
+    </section>
+
+    <section class="weeks-section">
+      <h2 class="section-title">주차별 지출</h2>
+      <div class="weeks"></div>
+    </section>
+
+    <section class="categories-section">
+      <h2 class="section-title">카테고리별 지출</h2>
+      <div class="category-list"></div>
+    </section>
+
+    <section class="weekday-section">
+      <h2 class="section-title">요일별 패턴</h2>
+      <div class="weekday-host"></div>
+    </section>
+  </div>
+
   <!-- ===== Settings screen ===== -->
   <div class="screen screen-settings" hidden>
-    <header class="settings-header">
-      <button class="icon-btn back-btn" type="button" aria-label="뒤로">←</button>
+    <header class="sub-header">
+      <button class="icon-btn back-btn-settings" type="button" aria-label="뒤로">←</button>
       <h2>설정</h2>
     </header>
 
@@ -814,6 +1063,8 @@
     { word: '오늘',   offset:  0 }
   ];
 
+  var DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
   // ===== State =====
   var state = {
     categories: [],
@@ -821,7 +1072,6 @@
     meta: { nextTxId: 1, nextCatId: 1, monthLimit: DEFAULT_MONTH_LIMIT, weekLimit: DEFAULT_WEEK_LIMIT }
   };
 
-  // 사용자가 보고 있는 월 (yyyy-mm). 초기값 = 오늘 month.
   var viewMonth = null;
 
   // ===== Cloud sync state =====
@@ -906,9 +1156,7 @@
       cloudKey = sp.get('nk') || hp.get('nk') || null;
       var workerOk = typeof WORKER_URL === 'string' && WORKER_URL && WORKER_URL.indexOf('REPLACE-ME') === -1;
       cloudEnabled = !!(cloudPageId && workerOk);
-    } catch (e) {
-      cloudEnabled = false;
-    }
+    } catch (e) { cloudEnabled = false; }
   }
 
   function cloudHeaders() {
@@ -933,10 +1181,7 @@
     if (!cloudEnabled) return Promise.resolve(null);
     setCloudStatus('⟳', 'pending', '동기화 중…');
     return fetch(cloudUrl(), { method: 'GET', headers: cloudHeaders() })
-      .then(function(res) {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.json();
-      })
+      .then(function(res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
       .then(function(data) {
         setCloudStatus('☁', 'ok', '동기화됨 · ' + new Date().toLocaleTimeString('ko-KR'));
         return (data && data.state) || null;
@@ -953,11 +1198,7 @@
     if (cloudInFlight) { cloudPendingSave = true; return Promise.resolve(); }
     cloudInFlight = true;
     setCloudStatus('⟳', 'pending', '저장 중…');
-    return fetch(cloudUrl(), {
-      method: 'PUT',
-      headers: cloudHeaders(),
-      body: JSON.stringify(state)
-    })
+    return fetch(cloudUrl(), { method: 'PUT', headers: cloudHeaders(), body: JSON.stringify(state) })
       .then(function(res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         setCloudStatus('☁', 'ok', '동기화됨 · ' + new Date().toLocaleTimeString('ko-KR'));
@@ -968,10 +1209,7 @@
       })
       .then(function() {
         cloudInFlight = false;
-        if (cloudPendingSave) {
-          cloudPendingSave = false;
-          cloudScheduleSave();
-        }
+        if (cloudPendingSave) { cloudPendingSave = false; cloudScheduleSave(); }
       });
   }
 
@@ -985,25 +1223,17 @@
   function initCloudSync(onRemoteApplied) {
     cloudReadParams();
     if (!cloudEnabled) {
-      var reason = !cloudPageId
-        ? '로컬 저장만 (URL에 ?np=... 없음)'
-        : '로컬 저장만 (Worker URL 미설정)';
+      var reason = !cloudPageId ? '로컬 저장만 (URL에 ?np=... 없음)' : '로컬 저장만 (Worker URL 미설정)';
       setCloudStatus('⌂', '', reason);
       return Promise.resolve(false);
     }
     cloudApplyingRemote = true;
     return cloudLoad().then(function(remote) {
       cloudApplyingRemote = false;
-      if (remote) {
-        if (typeof onRemoteApplied === 'function') onRemoteApplied(remote);
-      } else {
-        cloudScheduleSave();
-      }
+      if (remote) { if (typeof onRemoteApplied === 'function') onRemoteApplied(remote); }
+      else { cloudScheduleSave(); }
       return true;
-    }).catch(function() {
-      cloudApplyingRemote = false;
-      return false;
-    });
+    }).catch(function() { cloudApplyingRemote = false; return false; });
   }
 
   // ===== Utilities =====
@@ -1036,6 +1266,14 @@
     var p = dateStr.split('-');
     return parseInt(p[1], 10) + '월 ' + parseInt(p[2], 10) + '일';
   }
+  function daysInMonth(mk) {
+    var p = mk.split('-');
+    return new Date(parseInt(p[0], 10), parseInt(p[1], 10), 0).getDate();
+  }
+  function dayOfWeek(dateStr) {
+    var p = dateStr.split('-');
+    return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getDay();
+  }
   function getCategoryById(id) {
     for (var i = 0; i < state.categories.length; i++) {
       if (state.categories[i].id === id) return state.categories[i];
@@ -1063,8 +1301,6 @@
     var emoji = category.emoji ? escapeHtml(category.emoji) + ' ' : '';
     return '<span class="badge" style="background-color: rgba(' + c.rgb + ', 0.25); color: ' + c.text + '">' + emoji + escapeHtml(category.name) + '</span>';
   }
-
-  // 입력 텍스트의 숫자 그룹에 천 단위 콤마 자동 적용 (이미 콤마 있는 경우 정규화)
   function autoCommaText(text) {
     return text.replace(/\d{1,3}(?:,\d{3})+|\d{4,}/g, function(m) {
       var n = parseInt(m.replace(/,/g, ''), 10);
@@ -1079,10 +1315,7 @@
       var k = DATE_KEYWORDS[i];
       var idx = text.indexOf(k.word);
       if (idx !== -1) {
-        return {
-          date: offsetDate(k.offset),
-          remainText: text.slice(0, idx) + text.slice(idx + k.word.length)
-        };
+        return { date: offsetDate(k.offset), remainText: text.slice(0, idx) + text.slice(idx + k.word.length) };
       }
     }
     return { date: todayStr(), remainText: text };
@@ -1125,23 +1358,40 @@
 
   // ===== DOM refs =====
   var widget = document.querySelector('.widget');
-  var screenMain = widget.querySelector('.screen-main');
+  var screenHome = widget.querySelector('.screen-home');
+  var screenStats = widget.querySelector('.screen-stats');
   var screenSettings = widget.querySelector('.screen-settings');
-  var navPrev = widget.querySelector('.nav-prev');
-  var navNext = widget.querySelector('.nav-next');
-  var navLabel = widget.querySelector('.nav-label');
-  var heroAmount = widget.querySelector('.hero-amount');
-  var heroMeta = widget.querySelector('.hero-meta');
-  var weeksEl = widget.querySelector('.weeks');
-  var categoryListEl = widget.querySelector('.category-list');
-  var txListEl = widget.querySelector('.tx-list');
-  var emptyStateEl = widget.querySelector('.empty-state');
-  var toastEl = widget.querySelector('.toast');
-  var entryInput = widget.querySelector('#entry');
-  var addBtn = widget.querySelector('#add-btn');
+
+  var statsBtn = widget.querySelector('.stats-btn');
   var settingsBtn = widget.querySelector('.settings-btn');
-  var backBtn = widget.querySelector('.back-btn');
-  var quickDatesEl = widget.querySelector('.quick-dates');
+  var backBtnStats = widget.querySelector('.back-btn-stats');
+  var backBtnSettings = widget.querySelector('.back-btn-settings');
+
+  // Home
+  var homeHeroAmount = screenHome.querySelector('.hero-amount');
+  var homeHeroMeta = screenHome.querySelector('.hero-meta');
+  var homeHeroLabel = screenHome.querySelector('.hero-label');
+  var entryInput = screenHome.querySelector('#entry');
+  var addBtn = screenHome.querySelector('#add-btn');
+  var quickDatesEl = screenHome.querySelector('.quick-dates');
+  var catBarsHost = screenHome.querySelector('.cat-bars-host');
+  var paceHost = screenHome.querySelector('.pace-host');
+  var txListEl = screenHome.querySelector('.tx-list');
+  var emptyStateEl = screenHome.querySelector('.empty-state');
+
+  // Stats
+  var navPrev = screenStats.querySelector('.nav-prev');
+  var navNext = screenStats.querySelector('.nav-next');
+  var navLabel = screenStats.querySelector('.nav-label');
+  var statsHeroAmount = screenStats.querySelector('.stats-hero-amount');
+  var statsHeroMeta = screenStats.querySelector('.stats-hero-meta');
+  var statsHeroLabel = screenStats.querySelector('.stats-hero .hero-label');
+  var catDonutHost = screenStats.querySelector('.cat-donut-host');
+  var weeksEl = screenStats.querySelector('.weeks');
+  var categoryListEl = screenStats.querySelector('.category-list');
+  var weekdayHost = screenStats.querySelector('.weekday-host');
+
+  // Settings
   var monthLimitInput = screenSettings.querySelector('input[name="monthLimit"]');
   var weekLimitInput = screenSettings.querySelector('input[name="weekLimit"]');
   var settingsCatListEl = screenSettings.querySelector('.settings-category-list');
@@ -1150,23 +1400,204 @@
   var dataActionsEl = screenSettings.querySelector('.data-actions');
   var importInput = screenSettings.querySelector('.import-input');
 
-  // ===== Rendering: month nav =====
+  var toastEl = widget.querySelector('.toast');
+
+  // ===== Donut chart (stats) =====
+  function renderDonut(items, totalSpent, centerPct) {
+    var R = 40;
+    var circumference = 2 * Math.PI * R;
+    var html = '<svg viewBox="0 0 100 100" class="donut">';
+    html += '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="var(--color-progress-track)" stroke-width="14"/>';
+    if (items && items.length > 0 && totalSpent > 0) {
+      var offsetSum = 0;
+      items.forEach(function(item) {
+        if (item.amount <= 0) return;
+        var pct = item.amount / totalSpent;
+        var len = pct * circumference;
+        var offsetLen = offsetSum * circumference;
+        var color = (COLOR_HEX[item.color] || COLOR_HEX.gray).text;
+        html += '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="' + color +
+                '" stroke-width="14" stroke-dasharray="' + len.toFixed(2) + ' ' + circumference.toFixed(2) +
+                '" stroke-dashoffset="' + (-offsetLen).toFixed(2) +
+                '" transform="rotate(-90 50 50)" />';
+        offsetSum += pct;
+      });
+    }
+    html += '</svg>';
+    html += '<div class="donut-center"><span class="pct">' + centerPct + '%</span><span class="label">월 사용</span></div>';
+    return html;
+  }
+
+  // ===== Rendering: home =====
+  function renderHomeHero() {
+    var month = currentMonthKey();
+    var monthSum = state.transactions
+      .filter(function(t) { return monthKey(t.date) === month; })
+      .reduce(function(s,t) { return s + t.amount; }, 0);
+    var limit = state.meta.monthLimit;
+    var remaining = limit - monthSum;
+    var ratio = limit > 0 ? monthSum / limit : 0;
+    var pct = Math.round(ratio * 100);
+
+    homeHeroLabel.textContent = '남은 예산';
+    if (remaining >= 0) {
+      homeHeroAmount.textContent = formatMoney(remaining);
+      homeHeroAmount.classList.remove('over');
+    } else {
+      homeHeroAmount.textContent = formatMoney(-remaining) + ' 초과';
+      homeHeroAmount.classList.add('over');
+    }
+    homeHeroMeta.textContent = '/ ' + formatMoney(limit) + ' · ' + pct + '%';
+  }
+
+  function renderCatBars() {
+    var month = currentMonthKey();
+    var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === month; });
+    var totalSpent = monthTxs.reduce(function(s,t) { return s + t.amount; }, 0);
+
+    if (totalSpent === 0) {
+      catBarsHost.innerHTML = '<div class="cat-bars-empty">이 달 카테고리 기록이 없어요</div>';
+      return;
+    }
+
+    var rows = state.categories.map(function(cat) {
+      var sum = monthTxs.filter(function(t) { return t.categoryId === cat.id; })
+        .reduce(function(s,t) { return s + t.amount; }, 0);
+      return { cat: cat, amount: sum };
+    }).sort(function(a, b) { return b.amount - a.amount; });
+
+    var html = rows.map(function(it) {
+      var pct = totalSpent > 0 ? (it.amount / totalSpent) * 100 : 0;
+      var widthPct = Math.max(pct, it.amount > 0 ? 2 : 0); // 최소 가시성 2%
+      var color = (COLOR_HEX[it.cat.color] || COLOR_HEX.gray).text;
+      var emoji = it.cat.emoji ? escapeHtml(it.cat.emoji) + ' ' : '';
+      return '<div class="cat-bar-row">' +
+        '<span class="name">' + emoji + escapeHtml(it.cat.name) + '</span>' +
+        '<span class="bar"><span class="bar-fill" style="width: ' + widthPct.toFixed(1) + '%; background: ' + color + '"></span></span>' +
+        '<span class="amount">' + formatMoney(it.amount) + '</span>' +
+      '</div>';
+    }).join('');
+
+    catBarsHost.innerHTML = '<div class="cat-bars">' + html + '</div>';
+  }
+
+  function renderPaceCard() {
+    var month = currentMonthKey();
+    var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === month; });
+    var spent = monthTxs.reduce(function(s,t) { return s + t.amount; }, 0);
+    var limit = state.meta.monthLimit;
+
+    var today = new Date();
+    var dim = daysInMonth(month);
+    var elapsed = today.getDate(); // 1~31
+    var remainingDays = Math.max(0, dim - elapsed);
+
+    var actualAvg = elapsed > 0 ? spent / elapsed : 0;
+    var recommendedAvg = dim > 0 ? limit / dim : 0;
+
+    var actualClass = '';
+    if (actualAvg > recommendedAvg * 1.05) actualClass = 'over';
+    else if (actualAvg < recommendedAvg * 0.95) actualClass = 'under';
+
+    // 추세 예측
+    var forecastHtml = '';
+    if (spent <= 0) {
+      forecastHtml = '<div class="pace-forecast">아직 지출이 없어 추세를 못 잡아요</div>';
+    } else if (spent >= limit) {
+      forecastHtml = '<div class="pace-forecast warn">이미 한도를 ' + formatMoney(spent - limit) + ' 넘었어요</div>';
+    } else {
+      var remainingBudget = limit - spent;
+      var daysToLimit = actualAvg > 0 ? Math.ceil(remainingBudget / actualAvg) : Infinity;
+      if (daysToLimit > remainingDays || !Number.isFinite(daysToLimit)) {
+        var predictedTotal = actualAvg * dim;
+        var predictedRemaining = limit - predictedTotal;
+        forecastHtml = '<div class="pace-forecast ok">이 추세대로면 월말까지 ' +
+          formatMoney(Math.max(0, predictedRemaining)) + ' 남아요</div>';
+      } else {
+        var reachDay = elapsed + daysToLimit;
+        if (reachDay > dim) reachDay = dim;
+        forecastHtml = '<div class="pace-forecast warn">이 추세대로면 ' +
+          parseInt(month.split('-')[1], 10) + '월 ' + reachDay + '일에 한도 도달</div>';
+      }
+    }
+
+    var html =
+      '<div class="pace-card">' +
+        '<div class="pace-row">' +
+          '<div class="pace-col ' + actualClass + '">' +
+            '<span class="pace-label">실제 평균</span>' +
+            '<span class="pace-value">' + formatMoney(actualAvg) + '/일</span>' +
+          '</div>' +
+          '<div class="pace-col">' +
+            '<span class="pace-label">권장 평균</span>' +
+            '<span class="pace-value">' + formatMoney(recommendedAvg) + '/일</span>' +
+          '</div>' +
+        '</div>' +
+        forecastHtml +
+      '</div>';
+
+    paceHost.innerHTML = html;
+  }
+
+  function renderHomeTransactions() {
+    var month = currentMonthKey();
+    var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === month; });
+    var sorted = monthTxs.slice().sort(function(a, b) {
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return b.id - a.id;
+    });
+    if (sorted.length === 0) {
+      txListEl.innerHTML = '';
+      emptyStateEl.hidden = false;
+      return;
+    }
+    emptyStateEl.hidden = true;
+
+    var groups = {};
+    var orderDates = [];
+    sorted.forEach(function(t) {
+      if (!groups[t.date]) { groups[t.date] = []; orderDates.push(t.date); }
+      groups[t.date].push(t);
+    });
+
+    txListEl.innerHTML = orderDates.map(function(d) {
+      var items = groups[d];
+      var label = formatTxDate(d);
+      var itemHtml = items.map(function(t) {
+        var cat = getCategoryById(t.categoryId);
+        return '<div class="tx" data-tx-id="' + t.id + '">' +
+          '<div class="tx-body">' +
+            '<div class="tx-head">' + (cat ? badgeHtml(cat) : '') + '<span class="tx-amount">' + formatMoney(t.amount) + '</span></div>' +
+            '<div class="tx-raw">' + escapeHtml(t.rawText) + '</div>' +
+          '</div>' +
+          '<button class="tx-delete" type="button" data-action="delete-tx" aria-label="삭제">×</button>' +
+        '</div>';
+      }).join('');
+      return '<div class="tx-group">' +
+        '<div class="tx-group-header">' + escapeHtml(label) + ' · ' + items.length + '건</div>' +
+        itemHtml +
+      '</div>';
+    }).join('');
+  }
+
+  function renderHome() {
+    renderHomeHero();
+    renderCatBars();
+    renderPaceCard();
+    renderHomeTransactions();
+  }
+
+  // ===== Rendering: stats =====
   function renderMonthNav() {
     navLabel.textContent = formatMonthLabel(viewMonth);
     var cur = currentMonthKey();
-    if (viewMonth === cur) {
-      navLabel.classList.remove('not-current');
-    } else {
-      navLabel.classList.add('not-current');
-    }
-    // 미래 달 disable
+    if (viewMonth === cur) navLabel.classList.remove('not-current');
+    else navLabel.classList.add('not-current');
     navNext.disabled = (shiftMonth(viewMonth, 1) > cur);
-    // 이전은 항상 활성 (데이터가 어디까지 있는지 모르니 무한 이동 허용)
     navPrev.disabled = false;
   }
 
-  // ===== Rendering: main =====
-  function renderHero() {
+  function renderStatsHero() {
     var monthSum = state.transactions
       .filter(function(t) { return monthKey(t.date) === viewMonth; })
       .reduce(function(s,t) { return s + t.amount; }, 0);
@@ -1176,16 +1607,52 @@
     var pct = Math.round(ratio * 100);
 
     var label = (viewMonth === currentMonthKey()) ? '남은 예산' : formatMonthLabel(viewMonth) + ' 잔여';
-    widget.querySelector('.hero-label').textContent = label;
-
+    statsHeroLabel.textContent = label;
     if (remaining >= 0) {
-      heroAmount.textContent = formatMoney(remaining);
-      heroAmount.classList.remove('over');
+      statsHeroAmount.textContent = formatMoney(remaining);
+      statsHeroAmount.classList.remove('over');
     } else {
-      heroAmount.textContent = formatMoney(-remaining) + ' 초과';
-      heroAmount.classList.add('over');
+      statsHeroAmount.textContent = formatMoney(-remaining) + ' 초과';
+      statsHeroAmount.classList.add('over');
     }
-    heroMeta.textContent = '/ ' + formatMoney(limit) + ' · ' + pct + '%';
+    statsHeroMeta.textContent = '/ ' + formatMoney(limit) + ' · ' + pct + '%';
+  }
+
+  function renderStatsDonut() {
+    var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === viewMonth; });
+    var totalSpent = monthTxs.reduce(function(s,t) { return s + t.amount; }, 0);
+    var limit = state.meta.monthLimit;
+    var centerPct = limit > 0 ? Math.round((totalSpent / limit) * 100) : 0;
+
+    var items = state.categories.map(function(cat) {
+      var sum = monthTxs.filter(function(t) { return t.categoryId === cat.id; })
+        .reduce(function(s,t) { return s + t.amount; }, 0);
+      return { cat: cat, amount: sum, color: cat.color };
+    });
+
+    if (totalSpent === 0) {
+      catDonutHost.innerHTML = '<div class="cat-summary-empty">이 달 카테고리 기록이 없어요</div>';
+      return;
+    }
+
+    var sortedForLabels = items.slice().sort(function(a, b) { return b.amount - a.amount; });
+    var donutHtml = renderDonut(items, totalSpent, centerPct);
+    var labelsHtml = sortedForLabels.map(function(it) {
+      var pct = totalSpent > 0 ? Math.round((it.amount / totalSpent) * 100) : 0;
+      var c = (COLOR_HEX[it.color] || COLOR_HEX.gray).text;
+      var emoji = it.cat.emoji ? escapeHtml(it.cat.emoji) + ' ' : '';
+      return '<div class="cat-label">' +
+        '<span class="dot" style="background:' + c + '"></span>' +
+        '<span class="name">' + emoji + escapeHtml(it.cat.name) + '</span>' +
+        '<span class="pct">' + pct + '%</span>' +
+      '</div>';
+    }).join('');
+
+    catDonutHost.innerHTML =
+      '<div class="cat-summary">' +
+        '<div class="donut-wrap">' + donutHtml + '</div>' +
+        '<div class="cat-labels">' + labelsHtml + '</div>' +
+      '</div>';
   }
 
   function renderWeeks() {
@@ -1193,7 +1660,6 @@
     var weekSums = [0, 0, 0, 0];
     monthTxs.forEach(function(t) { weekSums[getWeekIndex(t.date)] += t.amount; });
     var weekRanges = ['1~7일', '8~14일', '15~21일', '22일 이후'];
-    // 이번 달 보고 있을 때만 현재 주차 펼침. 다른 달은 모두 접힘.
     var curWeek = (viewMonth === currentMonthKey()) ? getWeekIndex(todayStr()) : -1;
     var limit = state.meta.weekLimit;
 
@@ -1237,53 +1703,84 @@
     }).join('');
   }
 
-  function renderTransactions() {
-    // 보고 있는 월의 거래만
+  function renderWeekday() {
     var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === viewMonth; });
-    var sorted = monthTxs.slice().sort(function(a, b) {
-      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
-      return b.id - a.id;
+    var sums = [0,0,0,0,0,0,0];   // 일~토 합계
+    var counts = [0,0,0,0,0,0,0]; // 거래 건수 (참고용)
+    monthTxs.forEach(function(t) {
+      var d = dayOfWeek(t.date);
+      sums[d] += t.amount;
+      counts[d] += 1;
     });
-    if (sorted.length === 0) {
-      txListEl.innerHTML = '';
-      emptyStateEl.hidden = false;
+    var maxSum = Math.max.apply(null, sums);
+
+    if (maxSum === 0) {
+      weekdayHost.innerHTML = '<div class="cat-summary-empty">이 달 거래가 없어요</div>';
       return;
     }
-    emptyStateEl.hidden = true;
 
-    var groups = {};
-    var orderDates = [];
-    sorted.forEach(function(t) {
-      if (!groups[t.date]) { groups[t.date] = []; orderDates.push(t.date); }
-      groups[t.date].push(t);
-    });
+    var weekendSum = sums[0] + sums[6];
+    var weekdaySum = sums[1] + sums[2] + sums[3] + sums[4] + sums[5];
+    // 평균: 같은 요일 등장 횟수만큼 나눠야 정확. 간단화: 단순 합 비교 + 일수 고려
+    // 한 달에 주말 약 8~10일, 평일 약 20~22일 가정. 일평균으로 환산.
+    // 실제 등장한 요일의 day count 카운트
+    var dayCounts = countDaysOfWeekInMonth(viewMonth);
+    var weekendDays = dayCounts[0] + dayCounts[6];
+    var weekdayDays = dayCounts[1] + dayCounts[2] + dayCounts[3] + dayCounts[4] + dayCounts[5];
+    var weekendAvg = weekendDays > 0 ? weekendSum / weekendDays : 0;
+    var weekdayAvg = weekdayDays > 0 ? weekdaySum / weekdayDays : 0;
 
-    txListEl.innerHTML = orderDates.map(function(d) {
-      var items = groups[d];
-      var label = formatTxDate(d);
-      var itemHtml = items.map(function(t) {
-        var cat = getCategoryById(t.categoryId);
-        return '<div class="tx" data-tx-id="' + t.id + '">' +
-          '<div class="tx-body">' +
-            '<div class="tx-head">' + (cat ? badgeHtml(cat) : '') + '<span class="tx-amount">' + formatMoney(t.amount) + '</span></div>' +
-            '<div class="tx-raw">' + escapeHtml(t.rawText) + '</div>' +
-          '</div>' +
-          '<button class="tx-delete" type="button" data-action="delete-tx" aria-label="삭제">×</button>' +
-        '</div>';
-      }).join('');
-      return '<div class="tx-group">' +
-        '<div class="tx-group-header">' + escapeHtml(label) + ' · ' + items.length + '건</div>' +
-        itemHtml +
+    var summaryText = '';
+    if (weekendAvg > 0 && weekdayAvg > 0) {
+      var ratio = weekendAvg / weekdayAvg;
+      if (ratio > 1.15) {
+        summaryText = '주말이 평일보다 ' + ratio.toFixed(1) + '배 (일평균 기준)';
+      } else if (ratio < 0.85) {
+        summaryText = '평일이 주말보다 ' + (1 / ratio).toFixed(1) + '배 (일평균 기준)';
+      } else {
+        summaryText = '주말 · 평일 지출이 비슷해요';
+      }
+    } else if (weekendAvg === 0 && weekdayAvg > 0) {
+      summaryText = '주말 지출이 없어요';
+    } else if (weekdayAvg === 0 && weekendAvg > 0) {
+      summaryText = '평일 지출이 없어요';
+    }
+
+    var bars = sums.map(function(sum, i) {
+      var heightPct = maxSum > 0 ? (sum / maxSum) * 100 : 0;
+      var isWeekend = (i === 0 || i === 6);
+      return '<div class="weekday-col' + (isWeekend ? ' weekend' : '') + '" title="' + DAY_NAMES[i] + ': ' + formatMoney(sum) + '">' +
+        '<div class="bar" style="height: ' + heightPct.toFixed(1) + '%"></div>' +
+        '<span class="day">' + DAY_NAMES[i] + '</span>' +
       '</div>';
     }).join('');
+
+    weekdayHost.innerHTML =
+      '<div class="weekday-card">' +
+        '<div class="weekday-bars">' + bars + '</div>' +
+        '<div class="weekday-summary">' + summaryText + '</div>' +
+      '</div>';
   }
 
-  function renderMain() {
+  function countDaysOfWeekInMonth(mk) {
+    var p = mk.split('-');
+    var y = parseInt(p[0], 10);
+    var m = parseInt(p[1], 10) - 1;
+    var dim = new Date(y, m + 1, 0).getDate();
+    var counts = [0,0,0,0,0,0,0];
+    for (var d = 1; d <= dim; d++) {
+      counts[new Date(y, m, d).getDay()] += 1;
+    }
+    return counts;
+  }
+
+  function renderStats() {
     renderMonthNav();
-    renderHero();
+    renderStatsHero();
+    renderStatsDonut();
     renderWeeks();
     renderCategoriesView();
-    renderTransactions();
+    renderWeekday();
   }
 
   // ===== Rendering: settings =====
@@ -1318,15 +1815,24 @@
   }
 
   // ===== Screen toggle =====
-  function showSettings() {
-    renderSettings();
-    screenMain.hidden = true;
-    screenSettings.hidden = false;
-  }
-  function showMain() {
+  function showHome() {
+    screenStats.hidden = true;
     screenSettings.hidden = true;
-    screenMain.hidden = false;
-    renderMain();
+    screenHome.hidden = false;
+    renderHome();
+  }
+  function showStats() {
+    if (!viewMonth) viewMonth = currentMonthKey();
+    screenHome.hidden = true;
+    screenSettings.hidden = true;
+    screenStats.hidden = false;
+    renderStats();
+  }
+  function showSettingsScreen() {
+    screenHome.hidden = true;
+    screenStats.hidden = true;
+    screenSettings.hidden = false;
+    renderSettings();
   }
 
   // ===== Quick dates =====
@@ -1339,13 +1845,12 @@
     try { entryInput.setSelectionRange(end, end); } catch(e) {}
   }
 
-  // ===== Auto comma on entry input =====
+  // ===== Auto comma =====
   function handleEntryInput() {
     var v = entryInput.value;
     var caret = entryInput.selectionStart;
     var nv = autoCommaText(v);
     if (nv === v) return;
-    // caret 위치 보정: 입력된 위치 좌측의 콤마 변화량만큼 이동
     var leftBefore = v.slice(0, caret);
     var leftAfter = autoCommaText(leftBefore);
     var newCaret = leftAfter.length;
@@ -1357,10 +1862,7 @@
   function handleAdd() {
     var text = entryInput.value;
     var entry = parseEntry(text);
-    if (!entry) {
-      showToast('금액을 못 찾았어요');
-      return;
-    }
+    if (!entry) { showToast('금액을 못 찾았어요'); return; }
     state.transactions.push({
       id: state.meta.nextTxId,
       amount: entry.amount,
@@ -1371,19 +1873,14 @@
     state.meta.nextTxId += 1;
     saveState();
     entryInput.value = '';
-
-    // 입력한 거래의 month로 viewMonth 자동 이동 (사용자가 다른 달 보다 입력했을 때 누락 방지)
-    var entryMonth = monthKey(entry.date);
-    if (entryMonth !== viewMonth) {
-      viewMonth = entryMonth;
-    }
-    renderMain();
+    renderHome();
   }
 
   function handleDeleteTx(id) {
     state.transactions = state.transactions.filter(function(t) { return t.id !== id; });
     saveState();
-    renderMain();
+    if (!screenHome.hidden) renderHome();
+    if (!screenStats.hidden) renderStats();
   }
 
   function handleDeleteCategory(id) {
@@ -1439,21 +1936,12 @@
 
     if (!name) { showToast('이름을 입력해주세요'); return; }
     var budget = parseInt(budgetRaw, 10);
-    if (!Number.isFinite(budget) || budget < 0) {
-      showToast('예산은 0 이상의 숫자여야 해요');
-      return;
-    }
-    var keywords = kwRaw
-      ? kwRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean)
-      : [];
+    if (!Number.isFinite(budget) || budget < 0) { showToast('예산은 0 이상의 숫자여야 해요'); return; }
+    var keywords = kwRaw ? kwRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
 
     state.categories.push({
-      id: state.meta.nextCatId,
-      name: name,
-      emoji: emoji,
-      keywords: keywords,
-      budget: budget,
-      color: pickNextColor()
+      id: state.meta.nextCatId, name: name, emoji: emoji,
+      keywords: keywords, budget: budget, color: pickNextColor()
     });
     state.meta.nextCatId += 1;
     saveState();
@@ -1525,7 +2013,6 @@
     reader.onload = function() {
       try {
         var parsed = JSON.parse(reader.result);
-        // payload 또는 raw state 둘 다 허용
         var loaded = {
           categories: parsed.categories || [],
           transactions: parsed.transactions || [],
@@ -1539,11 +2026,8 @@
         saveState();
         showToast('가져오기 완료');
         renderSettings();
-        // viewMonth 갱신: 가장 최근 거래가 있는 month로
         if (state.transactions.length) {
-          var maxDate = state.transactions.reduce(function(acc, t) {
-            return t.date > acc ? t.date : acc;
-          }, state.transactions[0].date);
+          var maxDate = state.transactions.reduce(function(acc, t) { return t.date > acc ? t.date : acc; }, state.transactions[0].date);
           viewMonth = monthKey(maxDate);
         } else {
           viewMonth = currentMonthKey();
@@ -1579,23 +2063,6 @@
     applyQuickDate(btn.dataset.chip);
   });
 
-  navPrev.addEventListener('click', function() {
-    viewMonth = shiftMonth(viewMonth, -1);
-    renderMain();
-  });
-  navNext.addEventListener('click', function() {
-    var next = shiftMonth(viewMonth, 1);
-    if (next > currentMonthKey()) return; // 미래 차단
-    viewMonth = next;
-    renderMain();
-  });
-
-  weeksEl.addEventListener('click', function(e) {
-    var weekEl = e.target.closest('.week');
-    if (!weekEl) return;
-    weekEl.classList.toggle('collapsed');
-  });
-
   txListEl.addEventListener('click', function(e) {
     if (!e.target.dataset || e.target.dataset.action !== 'delete-tx') return;
     var txEl = e.target.closest('.tx');
@@ -1603,8 +2070,26 @@
     handleDeleteTx(parseInt(txEl.dataset.txId, 10));
   });
 
-  settingsBtn.addEventListener('click', showSettings);
-  backBtn.addEventListener('click', showMain);
+  navPrev.addEventListener('click', function() {
+    viewMonth = shiftMonth(viewMonth, -1);
+    renderStats();
+  });
+  navNext.addEventListener('click', function() {
+    var next = shiftMonth(viewMonth, 1);
+    if (next > currentMonthKey()) return;
+    viewMonth = next;
+    renderStats();
+  });
+  weeksEl.addEventListener('click', function(e) {
+    var weekEl = e.target.closest('.week');
+    if (!weekEl) return;
+    weekEl.classList.toggle('collapsed');
+  });
+
+  statsBtn.addEventListener('click', showStats);
+  settingsBtn.addEventListener('click', showSettingsScreen);
+  backBtnStats.addEventListener('click', showHome);
+  backBtnSettings.addEventListener('click', showHome);
 
   function bindLimitInput(input, field) {
     input.addEventListener('blur', function() { handleLimitChange(field, input.value); });
@@ -1636,14 +2121,9 @@
     }
   }
 
-  settingsCatListEl.addEventListener('blur', function(e) {
-    handleSettingsListChange(e.target);
-  }, true);
+  settingsCatListEl.addEventListener('blur', function(e) { handleSettingsListChange(e.target); }, true);
   settingsCatListEl.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
-      e.preventDefault();
-      e.target.blur();
-    }
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); e.target.blur(); }
   });
   settingsCatListEl.addEventListener('click', function(e) {
     if (!e.target.classList.contains('settings-cat-delete')) return;
@@ -1667,7 +2147,6 @@
     else if (e.key === 'Escape') { e.preventDefault(); clearAddCatPanel(); }
   });
 
-  // Data section
   dataActionsEl.addEventListener('click', function(e) {
     var action = e.target.dataset && e.target.dataset.action;
     if (action === 'export') handleExport();
@@ -1683,14 +2162,15 @@
   // ===== Init =====
   state = loadStateLocal();
   viewMonth = currentMonthKey();
-  renderMain();
+  renderHome();
 
   initCloudSync(function(remote) {
     cloudApplyingRemote = true;
     state = migrate(remote);
     saveStateLocal();
     cloudApplyingRemote = false;
-    renderMain();
+    if (!screenHome.hidden) renderHome();
+    if (!screenStats.hidden) renderStats();
     if (!screenSettings.hidden) renderSettings();
   });
 })();
