@@ -456,6 +456,48 @@
       font-size: var(--fs-sm);
     }
 
+    /* ===== Category compare (stats) ===== */
+    .cat-compare {
+      padding: 10px 14px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+    }
+    .compare-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: var(--fs-sm);
+      padding: 5px 0;
+      border-bottom: 1px solid var(--color-border-tertiary);
+    }
+    .compare-row:last-child { border-bottom: none; }
+    .compare-row .name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .compare-row .pcts {
+      font-size: var(--fs-sm);
+      color: var(--color-text-muted);
+      white-space: nowrap;
+    }
+    .compare-row .pcts strong {
+      color: var(--color-text-primary);
+      font-weight: bold;
+    }
+    .compare-row .delta {
+      font-size: var(--fs-xs);
+      width: 60px;
+      text-align: right;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .compare-row .delta.up { color: var(--color-warn); }
+    .compare-row .delta.down { color: #2ea043; }
+    .compare-row .delta.same { color: var(--color-text-muted); }
+
     /* ===== Weekday bars (stats) ===== */
     .weekday-card {
       padding: 12px 14px;
@@ -987,9 +1029,9 @@
       <span class="hero-meta stats-hero-meta"></span>
     </section>
 
-    <section class="cat-donut-section">
-      <h2 class="section-title">카테고리 비율</h2>
-      <div class="cat-donut-host"></div>
+    <section class="categories-section">
+      <h2 class="section-title">카테고리별 지출</h2>
+      <div class="category-list"></div>
     </section>
 
     <section class="weeks-section">
@@ -997,9 +1039,9 @@
       <div class="weeks"></div>
     </section>
 
-    <section class="categories-section">
-      <h2 class="section-title">카테고리별 지출</h2>
-      <div class="category-list"></div>
+    <section class="cat-compare-section">
+      <h2 class="section-title">지난달 카테고리 비율 비교</h2>
+      <div class="cat-compare-host"></div>
     </section>
 
     <section class="weekday-section">
@@ -1425,7 +1467,7 @@
   var statsHeroAmount = screenStats.querySelector('.stats-hero-amount');
   var statsHeroMeta = screenStats.querySelector('.stats-hero-meta');
   var statsHeroLabel = screenStats.querySelector('.stats-hero .hero-label');
-  var catDonutHost = screenStats.querySelector('.cat-donut-host');
+  var catCompareHost = screenStats.querySelector('.cat-compare-host');
   var weeksEl = screenStats.querySelector('.weeks');
   var categoryListEl = screenStats.querySelector('.category-list');
   var weekdayHost = screenStats.querySelector('.weekday-host');
@@ -1663,8 +1705,49 @@
     statsHeroMeta.textContent = '/ ' + formatMoney(limit) + ' · ' + pct + '%';
   }
 
-  function renderStatsDonut() {
-    renderDonutInto(catDonutHost, viewMonth);
+  function renderCatCompare() {
+    var prevMonth = shiftMonth(viewMonth, -1);
+    var curTxs = state.transactions.filter(function(t) { return monthKey(t.date) === viewMonth; });
+    var prevTxs = state.transactions.filter(function(t) { return monthKey(t.date) === prevMonth; });
+    var curTotal = curTxs.reduce(function(s,t) { return s + t.amount; }, 0);
+    var prevTotal = prevTxs.reduce(function(s,t) { return s + t.amount; }, 0);
+
+    if (curTotal === 0 && prevTotal === 0) {
+      catCompareHost.innerHTML = '<div class="cat-summary-empty">비교할 데이터가 없어요</div>';
+      return;
+    }
+
+    var rows = state.categories.map(function(cat) {
+      var cur = curTxs.filter(function(t) { return t.categoryId === cat.id; })
+        .reduce(function(s,t) { return s + t.amount; }, 0);
+      var prev = prevTxs.filter(function(t) { return t.categoryId === cat.id; })
+        .reduce(function(s,t) { return s + t.amount; }, 0);
+      var curPct = curTotal > 0 ? Math.round((cur / curTotal) * 100) : 0;
+      var prevPct = prevTotal > 0 ? Math.round((prev / prevTotal) * 100) : 0;
+      var delta = curPct - prevPct;
+      return { cat: cat, curPct: curPct, prevPct: prevPct, delta: delta, curAmt: cur, prevAmt: prev };
+    });
+
+    var html = rows.map(function(r) {
+      var emoji = r.cat.emoji ? escapeHtml(r.cat.emoji) + ' ' : '';
+      var deltaText, deltaClass;
+      if (r.curAmt === 0 && r.prevAmt === 0) {
+        deltaText = '–'; deltaClass = 'same';
+      } else if (r.delta > 0) {
+        deltaText = '▲ ' + r.delta + '%p'; deltaClass = 'up';
+      } else if (r.delta < 0) {
+        deltaText = '▼ ' + (-r.delta) + '%p'; deltaClass = 'down';
+      } else {
+        deltaText = '–'; deltaClass = 'same';
+      }
+      return '<div class="compare-row">' +
+        '<span class="name">' + emoji + escapeHtml(r.cat.name) + '</span>' +
+        '<span class="pcts"><strong>' + r.curPct + '%</strong> / 지난달 ' + r.prevPct + '%</span>' +
+        '<span class="delta ' + deltaClass + '">' + deltaText + '</span>' +
+      '</div>';
+    }).join('');
+
+    catCompareHost.innerHTML = '<div class="cat-compare">' + html + '</div>';
   }
 
   function renderWeeks() {
@@ -1789,9 +1872,9 @@
   function renderStats() {
     renderMonthNav();
     renderStatsHero();
-    renderStatsDonut();
-    renderWeeks();
     renderCategoriesView();
+    renderWeeks();
+    renderCatCompare();
     renderWeekday();
   }
 
