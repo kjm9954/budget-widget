@@ -411,52 +411,93 @@
       font-size: var(--fs-sm);
     }
 
-    /* ===== Category compare ===== */
+    /* ===== Category compare (I: 이중 막대) ===== */
     .cat-compare {
       padding: 10px 14px;
-      background: var(--color-background-secondary);
+      background: transparent;
+      border: 1px solid var(--color-border-tertiary);
       border-radius: var(--border-radius-md);
     }
     .compare-row {
       display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: var(--fs-sm);
-      padding: 5px 0;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 0;
       border-bottom: 1px solid var(--color-border-tertiary);
     }
-    .compare-row:last-child { border-bottom: none; }
-    .compare-row .name {
+    .compare-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .compare-row:first-child { padding-top: 0; }
+    .compare-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: var(--fs-sm);
+    }
+    .compare-header .name {
+      font-weight: bold;
       flex: 1;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .compare-row .pcts {
-      font-size: var(--fs-sm);
-      color: var(--color-text-muted);
-      white-space: nowrap;
-    }
-    .compare-row .pcts strong {
-      color: var(--color-text-primary);
-      font-weight: bold;
-    }
-    .compare-row .delta {
+    .compare-header .delta {
       font-size: var(--fs-xs);
-      width: 60px;
-      text-align: right;
       font-weight: bold;
       flex-shrink: 0;
+      padding: 1px 6px;
+      border-radius: 3px;
     }
-    .compare-row .delta.up { color: var(--color-warn); }
-    .compare-row .delta.down { color: #2ea043; }
-    .compare-row .delta.same { color: var(--color-text-muted); }
+    .compare-header .delta.up { color: var(--color-warn); background: rgba(224, 62, 62, 0.10); }
+    .compare-header .delta.down { color: #2ea043; background: rgba(46, 160, 67, 0.10); }
+    .compare-header .delta.same { color: var(--color-text-muted); }
+    .compare-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: var(--fs-xs);
+    }
+    .bar-row .bar-label {
+      width: 36px;
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+    .bar-row .bar {
+      flex: 1;
+      height: 8px;
+      background: var(--color-progress-track);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .bar-row .fill {
+      display: block;
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.2s;
+    }
+    .bar-row .bar-pct {
+      width: 38px;
+      text-align: right;
+      font-weight: bold;
+      color: var(--color-text-primary);
+      flex-shrink: 0;
+    }
+    .bar-row.prev .bar-pct {
+      color: var(--color-text-muted);
+      font-weight: normal;
+    }
 
-    /* ===== Weekday bars ===== */
+    /* ===== Weekday bars (H: 분석 카드 outline) ===== */
     .weekday-card {
       padding: 12px 14px;
-      background: var(--color-background-secondary);
+      background: transparent;
+      border: 1px solid var(--color-border-tertiary);
       border-radius: var(--border-radius-md);
     }
     .weekday-bars {
@@ -501,40 +542,48 @@
       border-top: 1px solid var(--color-border-tertiary);
     }
 
-    /* ===== Weeks ===== */
-    .week {
+    /* ===== Weeks (G: 한 카드로 통합) ===== */
+    .weeks-card {
       padding: 12px 14px;
       background: var(--color-background-secondary);
       border-radius: var(--border-radius-md);
-      margin-bottom: 8px;
-      cursor: pointer;
     }
-    .week.over { background: var(--color-warn-bg); }
-    .week-row {
+    .weeks-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--color-border-tertiary);
       font-size: var(--fs-sm);
     }
-    .week-row .label {
-      color: var(--color-text-muted);
-      flex: 1;
+    .weeks-row:last-child { border-bottom: none; }
+    .weeks-row.current {
+      background: var(--color-background-primary);
+      margin: 4px -8px;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid var(--color-border-tertiary);
     }
-    .week-row .amount {
+    .weeks-row.over .amount { color: var(--color-warn); }
+    .weeks-row .label {
+      color: var(--color-text-muted);
+      width: 76px;
+      flex-shrink: 0;
+    }
+    .weeks-row .label .week-num {
+      color: var(--color-text-primary);
       font-weight: bold;
-      font-size: var(--fs-base);
     }
-    .week-row .chevron {
-      color: var(--color-text-muted);
-      transition: transform 0.2s;
-      font-size: 12px;
-      width: 14px;
+    .weeks-row .progress {
+      flex: 1;
+      min-width: 40px;
+    }
+    .weeks-row .amount {
+      width: 84px;
       text-align: right;
+      font-weight: bold;
+      flex-shrink: 0;
     }
-    .week.collapsed .chevron { transform: rotate(-90deg); }
-    .week-detail { margin-top: 10px; }
-    .week.collapsed .week-detail { display: none; }
 
     .progress {
       height: 6px;
@@ -685,14 +734,103 @@
     /* ===== Settings screen ===== */
     .screen[hidden] { display: none; }
 
-    .settings-section { margin-bottom: 22px; }
+    .settings-section { margin-bottom: 24px; }
     .settings-section:last-child { margin-bottom: 0; }
     .settings-section h3 {
-      margin: 0 0 8px 0;
+      margin: 0 0 10px 0;
+      padding: 4px 0 4px 10px;
+      font-size: var(--fs-base);
+      color: var(--color-text-primary);
+      font-weight: bold;
+      letter-spacing: 0.01em;
+      border-left: 3px solid var(--color-text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 한도 추적 카드 (B) */
+    .budget-tracking {
+      padding: 12px 14px;
+      background: var(--color-background-secondary);
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      margin-bottom: 10px;
+      border-left-width: 4px;
+    }
+    .bt-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .bt-emoji {
+      font-size: 22px;
+      line-height: 1;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .bt-text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .bt-label {
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+    }
+    .bt-name {
+      font-size: var(--fs-base);
+      font-weight: bold;
+    }
+    .bt-usage {
       font-size: var(--fs-sm);
       color: var(--color-text-muted);
-      font-weight: normal;
-      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+    .bt-usage strong {
+      color: var(--color-text-primary);
+      font-weight: bold;
+    }
+    .bt-usage strong.over { color: var(--color-warn); }
+    .bt-progress {
+      height: 4px;
+      background: var(--color-progress-track);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .bt-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.2s;
+    }
+    .bt-select-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--color-border-tertiary);
+    }
+    .bt-select-row .label {
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+    .bt-select-row select {
+      flex: 1;
+      min-height: 32px;
+      padding: 0 8px;
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      font-family: inherit;
+      font-size: var(--fs-sm);
     }
 
     .limit-row {
@@ -733,9 +871,29 @@
       border-left: 4px solid var(--color-border-tertiary);
     }
     .settings-cat[data-parent-id] {
-      margin-left: 20px;
+      margin-left: 24px;
       padding: 6px 10px 6px 8px;
       border-left-width: 3px;
+      position: relative;
+    }
+    /* 트리 connector (C) */
+    .settings-cat[data-parent-id]::before {
+      content: '';
+      position: absolute;
+      left: -16px;
+      top: 18px;
+      width: 12px;
+      height: 1px;
+      background: var(--color-border-tertiary);
+    }
+    .settings-cat[data-parent-id]::after {
+      content: '';
+      position: absolute;
+      left: -16px;
+      top: -3px;
+      bottom: 50%;
+      width: 1px;
+      background: var(--color-border-tertiary);
     }
     .cat-summary-line {
       display: flex;
@@ -1205,16 +1363,8 @@
     </header>
 
     <div class="settings-section">
-      <h3>예산 한도</h3>
-      <div class="limit-row">
-        <span class="label">한도 추적</span>
-        <select name="budgetCategoryId"></select>
-      </div>
-      <div class="limit-row">
-        <span class="label">월 한도</span>
-        <input type="number" inputmode="numeric" name="monthLimit" />
-        <span>원</span>
-      </div>
+      <h3>💰 예산 한도</h3>
+      <div class="budget-tracking-host"></div>
       <div class="limit-row">
         <span class="label">주 한도</span>
         <input type="number" inputmode="numeric" name="weekLimit" />
@@ -1223,7 +1373,7 @@
     </div>
 
     <div class="settings-section">
-      <h3>카테고리 관리</h3>
+      <h3>🏷 카테고리 관리</h3>
       <div class="settings-category-list"></div>
       <button class="add-cat-trigger" type="button">+ 카테고리 추가</button>
       <div class="add-cat-panel" hidden>
@@ -1244,7 +1394,7 @@
     </div>
 
     <div class="settings-section">
-      <h3>데이터 관리</h3>
+      <h3>💾 데이터 관리</h3>
       <div class="data-actions">
         <button type="button" data-action="export">📤 JSON 내보내기</button>
         <button type="button" data-action="import">📥 JSON 가져오기</button>
@@ -1746,8 +1896,7 @@
   var weekdayHost = screenStats.querySelector('.weekday-host');
 
   // Settings
-  var budgetCatSelect = screenSettings.querySelector('select[name="budgetCategoryId"]');
-  var monthLimitInput = screenSettings.querySelector('input[name="monthLimit"]');
+  var budgetTrackingHost = screenSettings.querySelector('.budget-tracking-host');
   var weekLimitInput = screenSettings.querySelector('input[name="weekLimit"]');
   var settingsCatListEl = screenSettings.querySelector('.settings-category-list');
   var addCatTrigger = screenSettings.querySelector('.add-cat-trigger');
@@ -2041,23 +2190,22 @@
     var curWeek = (viewMonth === currentMonthKey()) ? getWeekIndex(todayStr()) : -1;
     var limit = state.meta.weekLimit;
 
-    weeksEl.innerHTML = weekSums.map(function(sum, i) {
+    var rows = weekSums.map(function(sum, i) {
       var ratio = limit > 0 ? sum / limit : 0;
       var over = ratio >= 1;
       var widthPct = Math.min(100, ratio * 100);
       var color = progressColor(ratio, COLOR_HEX.gray.text);
-      var collapsed = (i !== curWeek);
-      return '<div class="week' + (over ? ' over' : '') + (collapsed ? ' collapsed' : '') + '" data-week-idx="' + i + '">' +
-        '<div class="week-row">' +
-          '<span class="label">' + (i + 1) + '주차 (' + weekRanges[i] + ')</span>' +
-          '<span class="amount">' + formatMoney(sum) + '</span>' +
-          '<span class="chevron">▾</span>' +
-        '</div>' +
-        '<div class="week-detail">' +
-          '<div class="progress"><div class="progress-fill" style="width: ' + widthPct + '%; background: ' + color + '"></div></div>' +
-        '</div>' +
+      var classes = ['weeks-row'];
+      if (over) classes.push('over');
+      if (i === curWeek) classes.push('current');
+      return '<div class="' + classes.join(' ') + '">' +
+        '<span class="label"><span class="week-num">' + (i + 1) + '주차</span> ' + weekRanges[i] + '</span>' +
+        '<div class="progress"><div class="progress-fill" style="width: ' + widthPct + '%; background: ' + color + '"></div></div>' +
+        '<span class="amount">' + formatMoney(sum) + '</span>' +
       '</div>';
     }).join('');
+
+    weeksEl.innerHTML = '<div class="weeks-card">' + rows + '</div>';
   }
 
   function renderCategoriesView() {
@@ -2148,10 +2296,25 @@
       else if (delta > 0) { deltaText = '▲ ' + delta + '%p'; deltaClass = 'up'; }
       else if (delta < 0) { deltaText = '▼ ' + (-delta) + '%p'; deltaClass = 'down'; }
       else { deltaText = '–'; deltaClass = 'same'; }
+      var catColor = (COLOR_HEX[r.cat.color] || COLOR_HEX.gray).text;
+
       return '<div class="compare-row">' +
-        '<span class="name">' + emoji + escapeHtml(r.cat.name) + '</span>' +
-        '<span class="pcts"><strong>' + curPct + '%</strong> / 지난달 ' + prevPct + '%</span>' +
-        '<span class="delta ' + deltaClass + '">' + deltaText + '</span>' +
+        '<div class="compare-header">' +
+          '<span class="name">' + emoji + escapeHtml(r.cat.name) + '</span>' +
+          '<span class="delta ' + deltaClass + '">' + deltaText + '</span>' +
+        '</div>' +
+        '<div class="compare-bars">' +
+          '<div class="bar-row">' +
+            '<span class="bar-label">이번달</span>' +
+            '<span class="bar"><span class="fill" style="width: ' + curPct + '%; background: ' + catColor + '"></span></span>' +
+            '<span class="bar-pct">' + curPct + '%</span>' +
+          '</div>' +
+          '<div class="bar-row prev">' +
+            '<span class="bar-label">지난달</span>' +
+            '<span class="bar"><span class="fill" style="width: ' + prevPct + '%; background: var(--color-text-muted); opacity: 0.45"></span></span>' +
+            '<span class="bar-pct">' + prevPct + '%</span>' +
+          '</div>' +
+        '</div>' +
       '</div>';
     }).join('');
 
@@ -2231,13 +2394,49 @@
   }
 
   // ===== Rendering: settings =====
-  function renderBudgetCatSelect() {
+  function renderBudgetTracking() {
+    var bc = getBudgetCat();
+    var month = currentMonthKey();
+    var spent = getCategorySpent(state.meta.budgetCategoryId, month);
+    var limit = getBudgetLimit();
+    var ratio = limit > 0 ? spent / limit : 0;
+    var pct = Math.round(ratio * 100);
+    var widthPct = Math.min(100, ratio * 100);
+    var baseHex = bc ? (COLOR_HEX[bc.color] || COLOR_HEX.gray).text : COLOR_HEX.gray.text;
+    var color = progressColor(ratio, baseHex);
+
     var topCats = state.categories.filter(function(c) { return c.parentId === null; });
-    budgetCatSelect.innerHTML = topCats.map(function(c) {
-      var emoji = c.emoji ? c.emoji + ' ' : '';
+    var optionsHtml = topCats.map(function(c) {
+      var em = c.emoji ? c.emoji + ' ' : '';
       return '<option value="' + c.id + '"' + (c.id === state.meta.budgetCategoryId ? ' selected' : '') + '>' +
-        emoji + escapeHtml(c.name) + '</option>';
+        em + escapeHtml(c.name) + '</option>';
     }).join('');
+
+    var emojiText = bc && bc.emoji ? bc.emoji : '💰';
+    var nameText = bc ? bc.name : '미설정';
+    var overClass = ratio >= 1 ? ' class="over"' : '';
+
+    budgetTrackingHost.innerHTML =
+      '<div class="budget-tracking" style="border-left-color: ' + baseHex + '">' +
+        '<div class="bt-row">' +
+          '<span class="bt-emoji">' + escapeHtml(emojiText) + '</span>' +
+          '<div class="bt-text">' +
+            '<span class="bt-label">한도 추적 중</span>' +
+            '<span class="bt-name">' + escapeHtml(nameText) + ' · ' + formatMoney(spent) + ' / ' + formatMoney(limit) + '</span>' +
+          '</div>' +
+          '<span class="bt-usage"><strong' + overClass + '>' + pct + '%</strong></span>' +
+        '</div>' +
+        '<div class="bt-progress"><div class="bt-progress-fill" style="width: ' + widthPct + '%; background: ' + color + '"></div></div>' +
+        '<div class="bt-select-row">' +
+          '<span class="label">추적 카테고리</span>' +
+          '<select name="budgetCategoryId">' + optionsHtml + '</select>' +
+        '</div>' +
+        '<div class="bt-select-row">' +
+          '<span class="label">월 한도</span>' +
+          '<input type="number" inputmode="numeric" name="monthLimit" value="' + (bc ? bc.budget : 0) + '" style="width: 130px; text-align: right; min-height: 32px; padding: 0 8px; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); font-family: inherit; font-size: var(--fs-sm);" />' +
+          '<span style="font-size: var(--fs-xs); color: var(--color-text-muted);">원</span>' +
+        '</div>' +
+      '</div>';
   }
 
   function renderParentSelect(selectEl, currentValue) {
@@ -2253,9 +2452,7 @@
   }
 
   function renderSettings() {
-    renderBudgetCatSelect();
-    var budgetCat = getBudgetCat();
-    monthLimitInput.value = budgetCat ? budgetCat.budget : 0;
+    renderBudgetTracking();
     weekLimitInput.value = state.meta.weekLimit;
 
     // 카테고리 정렬: 최상위 + 그 아래 자식들 (트리 순서)
@@ -2517,15 +2714,13 @@
     if (!Number.isFinite(num) || num < 0) {
       showToast('한도는 0 이상의 숫자여야 해요');
       if (field === 'monthLimit') {
-        var bc = getBudgetCat();
-        monthLimitInput.value = bc ? bc.budget : 0;
+        renderBudgetTracking();
       } else if (field === 'weekLimit') {
         weekLimitInput.value = state.meta.weekLimit;
       }
       return;
     }
     if (field === 'monthLimit') {
-      // 한도 추적 카테고리의 budget을 변경
       var bc = getBudgetCat();
       if (bc) bc.budget = num;
     } else if (field === 'weekLimit') {
@@ -2663,10 +2858,25 @@
       if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
     });
   }
-  bindLimitInput(monthLimitInput, 'monthLimit');
   bindLimitInput(weekLimitInput, 'weekLimit');
-  budgetCatSelect.addEventListener('change', function() {
-    handleBudgetCatChange(budgetCatSelect.value);
+
+  // 한도 추적 카드 (동적 render) — delegated events
+  budgetTrackingHost.addEventListener('change', function(e) {
+    if (e.target.matches('select[name="budgetCategoryId"]')) {
+      handleBudgetCatChange(e.target.value);
+    }
+  });
+  budgetTrackingHost.addEventListener('blur', function(e) {
+    if (e.target.matches('input[name="monthLimit"]')) {
+      handleLimitChange('monthLimit', e.target.value);
+      renderBudgetTracking();
+    }
+  }, true);
+  budgetTrackingHost.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.matches('input[name="monthLimit"]')) {
+      e.preventDefault();
+      e.target.blur();
+    }
   });
 
   function refreshSummaryLine(catEl, cat) {
@@ -2709,9 +2919,9 @@
       } else if (target.classList.contains('budget-input')) {
         handleSettingsCatChange(id, 'budget', target.value);
         target.value = cat.budget;
-        // 한도 추적 카테고리 budget 변경되면 monthLimit input도 동기화
+        // 한도 추적 카테고리 budget 변경되면 한도 추적 카드도 다시 그림
         if (id === state.meta.budgetCategoryId) {
-          monthLimitInput.value = cat.budget;
+          renderBudgetTracking();
         }
       }
       refreshSummaryLine(catEl, cat);
