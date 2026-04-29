@@ -103,6 +103,45 @@
     }
     .icon-btn:hover { background: var(--color-background-secondary); }
 
+    /* ===== Month nav ===== */
+    .month-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      margin-bottom: 10px;
+    }
+    .month-nav button {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: transparent;
+      color: var(--color-text-primary);
+      cursor: pointer;
+      border-radius: var(--border-radius-md);
+      font-size: 16px;
+      font-family: inherit;
+    }
+    .month-nav button:hover:not(:disabled) {
+      background: var(--color-border-tertiary);
+    }
+    .month-nav button:disabled {
+      color: var(--color-text-muted);
+      cursor: not-allowed;
+      opacity: 0.35;
+    }
+    .month-nav .nav-label {
+      font-weight: bold;
+      font-size: var(--fs-base);
+      flex: 1;
+      text-align: center;
+    }
+    .month-nav .nav-label.not-current {
+      color: var(--color-caution);
+    }
+
     /* ===== Hero ===== */
     .hero {
       padding: 16px;
@@ -574,6 +613,38 @@
       font-weight: bold;
     }
 
+    /* ===== Data section ===== */
+    .data-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .data-actions button {
+      width: 100%;
+      min-height: 44px;
+      padding: 0 14px;
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-secondary);
+      color: var(--color-text-primary);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: var(--fs-base);
+      text-align: left;
+    }
+    .data-actions button:hover {
+      background: var(--color-border-tertiary);
+    }
+    .data-actions button.danger {
+      color: var(--color-warn);
+    }
+    .data-actions .data-hint {
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      padding: 0 4px;
+    }
+    .import-input { display: none; }
+
     /* ===== Toast ===== */
     .toast {
       position: absolute;
@@ -608,6 +679,12 @@
 
   <!-- ===== Main screen ===== -->
   <div class="screen screen-main">
+    <div class="month-nav">
+      <button class="nav-prev" type="button" aria-label="이전 달">←</button>
+      <span class="nav-label">2026년 4월</span>
+      <button class="nav-next" type="button" aria-label="다음 달">→</button>
+    </div>
+
     <section class="hero">
       <span class="hero-label">남은 예산</span>
       <span class="hero-amount">0원</span>
@@ -621,7 +698,7 @@
         <button type="button" data-chip="그제">그제</button>
       </div>
       <div class="input-row">
-        <input id="entry" type="text" placeholder="예: 점심 김밥 5000" autocomplete="off" />
+        <input id="entry" type="text" placeholder="예: 점심 김밥 5,000" autocomplete="off" />
         <button id="add-btn" type="button">추가</button>
       </div>
     </section>
@@ -641,7 +718,7 @@
       <div class="tx-list"></div>
       <div class="empty-state" hidden>
         <div class="empty-icon">📒</div>
-        <div class="empty-message">첫 지출을 기록해보세요</div>
+        <div class="empty-message">이 달의 지출이 아직 없어요</div>
       </div>
     </section>
   </div>
@@ -684,6 +761,17 @@
         </div>
       </div>
     </div>
+
+    <div class="settings-section">
+      <h3>데이터 관리</h3>
+      <div class="data-actions">
+        <button type="button" data-action="export">📤 JSON 내보내기</button>
+        <button type="button" data-action="import">📥 JSON 가져오기</button>
+        <button type="button" data-action="reset" class="danger">🗑 모든 데이터 초기화</button>
+        <input type="file" class="import-input" accept="application/json,.json" />
+        <p class="data-hint">내보낸 JSON 파일은 다른 디바이스나 백업용으로 활용하세요. 가져오기 시 현재 데이터는 덮어씌워집니다.</p>
+      </div>
+    </div>
   </div>
 
   <div class="toast"></div>
@@ -694,7 +782,6 @@
   'use strict';
 
   // ===== Cloud sync constants =====
-  // Cloudflare Worker 배포 후 URL 입력. 'REPLACE-ME'로 두면 클라우드 동기화 비활성(로컬만).
   var WORKER_URL = 'REPLACE-ME';
   var SAVE_DEBOUNCE_MS = 1500;
 
@@ -733,6 +820,9 @@
     transactions: [],
     meta: { nextTxId: 1, nextCatId: 1, monthLimit: DEFAULT_MONTH_LIMIT, weekLimit: DEFAULT_WEEK_LIMIT }
   };
+
+  // 사용자가 보고 있는 월 (yyyy-mm). 초기값 = 오늘 month.
+  var viewMonth = null;
 
   // ===== Cloud sync state =====
   var cloudPageId = null;
@@ -907,7 +997,6 @@
       if (remote) {
         if (typeof onRemoteApplied === 'function') onRemoteApplied(remote);
       } else {
-        // 원격이 비었으면 현재 로컬 state를 한 번 업로드
         cloudScheduleSave();
       }
       return true;
@@ -929,7 +1018,17 @@
     return Math.min(3, Math.floor((day - 1) / 7));
   }
   function currentMonthKey() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
-  function currentWeekIndex() { return getWeekIndex(todayStr()); }
+  function shiftMonth(mk, delta) {
+    var p = mk.split('-');
+    var y = parseInt(p[0], 10);
+    var m = parseInt(p[1], 10) - 1 + delta;
+    var d = new Date(y, m, 1);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1);
+  }
+  function formatMonthLabel(mk) {
+    var p = mk.split('-');
+    return p[0] + '년 ' + parseInt(p[1], 10) + '월';
+  }
   function formatTxDate(dateStr) {
     if (dateStr === todayStr()) return '오늘';
     if (dateStr === offsetDate(-1)) return '어제';
@@ -963,6 +1062,15 @@
     var c = COLOR_HEX[category.color] || COLOR_HEX.gray;
     var emoji = category.emoji ? escapeHtml(category.emoji) + ' ' : '';
     return '<span class="badge" style="background-color: rgba(' + c.rgb + ', 0.25); color: ' + c.text + '">' + emoji + escapeHtml(category.name) + '</span>';
+  }
+
+  // 입력 텍스트의 숫자 그룹에 천 단위 콤마 자동 적용 (이미 콤마 있는 경우 정규화)
+  function autoCommaText(text) {
+    return text.replace(/\d{1,3}(?:,\d{3})+|\d{4,}/g, function(m) {
+      var n = parseInt(m.replace(/,/g, ''), 10);
+      if (!Number.isFinite(n)) return m;
+      return n.toLocaleString('ko-KR');
+    });
   }
 
   // ===== Parsers =====
@@ -1019,6 +1127,9 @@
   var widget = document.querySelector('.widget');
   var screenMain = widget.querySelector('.screen-main');
   var screenSettings = widget.querySelector('.screen-settings');
+  var navPrev = widget.querySelector('.nav-prev');
+  var navNext = widget.querySelector('.nav-next');
+  var navLabel = widget.querySelector('.nav-label');
   var heroAmount = widget.querySelector('.hero-amount');
   var heroMeta = widget.querySelector('.hero-meta');
   var weeksEl = widget.querySelector('.weeks');
@@ -1036,17 +1147,36 @@
   var settingsCatListEl = screenSettings.querySelector('.settings-category-list');
   var addCatTrigger = screenSettings.querySelector('.add-cat-trigger');
   var addCatPanel = screenSettings.querySelector('.add-cat-panel');
+  var dataActionsEl = screenSettings.querySelector('.data-actions');
+  var importInput = screenSettings.querySelector('.import-input');
+
+  // ===== Rendering: month nav =====
+  function renderMonthNav() {
+    navLabel.textContent = formatMonthLabel(viewMonth);
+    var cur = currentMonthKey();
+    if (viewMonth === cur) {
+      navLabel.classList.remove('not-current');
+    } else {
+      navLabel.classList.add('not-current');
+    }
+    // 미래 달 disable
+    navNext.disabled = (shiftMonth(viewMonth, 1) > cur);
+    // 이전은 항상 활성 (데이터가 어디까지 있는지 모르니 무한 이동 허용)
+    navPrev.disabled = false;
+  }
 
   // ===== Rendering: main =====
   function renderHero() {
-    var month = currentMonthKey();
     var monthSum = state.transactions
-      .filter(function(t) { return monthKey(t.date) === month; })
+      .filter(function(t) { return monthKey(t.date) === viewMonth; })
       .reduce(function(s,t) { return s + t.amount; }, 0);
     var limit = state.meta.monthLimit;
     var remaining = limit - monthSum;
     var ratio = limit > 0 ? monthSum / limit : 0;
     var pct = Math.round(ratio * 100);
+
+    var label = (viewMonth === currentMonthKey()) ? '남은 예산' : formatMonthLabel(viewMonth) + ' 잔여';
+    widget.querySelector('.hero-label').textContent = label;
 
     if (remaining >= 0) {
       heroAmount.textContent = formatMoney(remaining);
@@ -1059,12 +1189,12 @@
   }
 
   function renderWeeks() {
-    var month = currentMonthKey();
-    var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === month; });
+    var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === viewMonth; });
     var weekSums = [0, 0, 0, 0];
     monthTxs.forEach(function(t) { weekSums[getWeekIndex(t.date)] += t.amount; });
     var weekRanges = ['1~7일', '8~14일', '15~21일', '22일 이후'];
-    var curWeek = currentWeekIndex();
+    // 이번 달 보고 있을 때만 현재 주차 펼침. 다른 달은 모두 접힘.
+    var curWeek = (viewMonth === currentMonthKey()) ? getWeekIndex(todayStr()) : -1;
     var limit = state.meta.weekLimit;
 
     weeksEl.innerHTML = weekSums.map(function(sum, i) {
@@ -1087,10 +1217,9 @@
   }
 
   function renderCategoriesView() {
-    var month = currentMonthKey();
     categoryListEl.innerHTML = state.categories.map(function(cat) {
       var sum = state.transactions
-        .filter(function(t) { return t.categoryId === cat.id && monthKey(t.date) === month; })
+        .filter(function(t) { return t.categoryId === cat.id && monthKey(t.date) === viewMonth; })
         .reduce(function(s,t) { return s + t.amount; }, 0);
       var ratio = cat.budget > 0 ? sum / cat.budget : 0;
       var widthPct = cat.budget > 0 ? Math.min(100, ratio * 100) : 0;
@@ -1109,7 +1238,9 @@
   }
 
   function renderTransactions() {
-    var sorted = state.transactions.slice().sort(function(a, b) {
+    // 보고 있는 월의 거래만
+    var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === viewMonth; });
+    var sorted = monthTxs.slice().sort(function(a, b) {
       if (a.date !== b.date) return a.date < b.date ? 1 : -1;
       return b.id - a.id;
     });
@@ -1148,6 +1279,7 @@
   }
 
   function renderMain() {
+    renderMonthNav();
     renderHero();
     renderWeeks();
     renderCategoriesView();
@@ -1207,6 +1339,20 @@
     try { entryInput.setSelectionRange(end, end); } catch(e) {}
   }
 
+  // ===== Auto comma on entry input =====
+  function handleEntryInput() {
+    var v = entryInput.value;
+    var caret = entryInput.selectionStart;
+    var nv = autoCommaText(v);
+    if (nv === v) return;
+    // caret 위치 보정: 입력된 위치 좌측의 콤마 변화량만큼 이동
+    var leftBefore = v.slice(0, caret);
+    var leftAfter = autoCommaText(leftBefore);
+    var newCaret = leftAfter.length;
+    entryInput.value = nv;
+    try { entryInput.setSelectionRange(newCaret, newCaret); } catch(e) {}
+  }
+
   // ===== Action handlers =====
   function handleAdd() {
     var text = entryInput.value;
@@ -1225,6 +1371,12 @@
     state.meta.nextTxId += 1;
     saveState();
     entryInput.value = '';
+
+    // 입력한 거래의 month로 viewMonth 자동 이동 (사용자가 다른 달 보다 입력했을 때 누락 방지)
+    var entryMonth = monthKey(entry.date);
+    if (entryMonth !== viewMonth) {
+      viewMonth = entryMonth;
+    }
     renderMain();
   }
 
@@ -1339,16 +1491,103 @@
     saveState();
   }
 
+  // ===== Data export / import / reset =====
+  function handleExport() {
+    try {
+      var payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        categories: state.categories,
+        transactions: state.transactions,
+        meta: state.meta
+      };
+      var json = JSON.stringify(payload, null, 2);
+      var blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      var stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      a.href = url;
+      a.download = 'budget-' + stamp + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      showToast('내보내기 완료');
+    } catch (e) {
+      showToast('내보내기 실패');
+      console.warn('[export]', e);
+    }
+  }
+
+  function handleImportFile(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      try {
+        var parsed = JSON.parse(reader.result);
+        // payload 또는 raw state 둘 다 허용
+        var loaded = {
+          categories: parsed.categories || [],
+          transactions: parsed.transactions || [],
+          meta: parsed.meta || {}
+        };
+        if (!Array.isArray(loaded.categories) || !Array.isArray(loaded.transactions)) {
+          throw new Error('형식 오류');
+        }
+        if (!window.confirm('가져오기 시 현재 데이터는 덮어씌워집니다. 계속할까요?')) return;
+        state = migrate(loaded);
+        saveState();
+        showToast('가져오기 완료');
+        renderSettings();
+        // viewMonth 갱신: 가장 최근 거래가 있는 month로
+        if (state.transactions.length) {
+          var maxDate = state.transactions.reduce(function(acc, t) {
+            return t.date > acc ? t.date : acc;
+          }, state.transactions[0].date);
+          viewMonth = monthKey(maxDate);
+        } else {
+          viewMonth = currentMonthKey();
+        }
+      } catch (e) {
+        showToast('가져오기 실패: ' + (e.message || e));
+        console.warn('[import]', e);
+      }
+    };
+    reader.onerror = function() { showToast('파일 읽기 실패'); };
+    reader.readAsText(file);
+  }
+
+  function handleReset() {
+    if (!window.confirm('모든 데이터를 초기화할까요?\n카테고리·거래·예산 한도가 기본값으로 돌아갑니다.')) return;
+    state = defaultState();
+    viewMonth = currentMonthKey();
+    saveState();
+    showToast('초기화 완료');
+    renderSettings();
+  }
+
   // ===== Event bindings =====
   addBtn.addEventListener('click', handleAdd);
   entryInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); handleAdd(); }
   });
+  entryInput.addEventListener('input', handleEntryInput);
 
   quickDatesEl.addEventListener('click', function(e) {
     var btn = e.target.closest('button[data-chip]');
     if (!btn) return;
     applyQuickDate(btn.dataset.chip);
+  });
+
+  navPrev.addEventListener('click', function() {
+    viewMonth = shiftMonth(viewMonth, -1);
+    renderMain();
+  });
+  navNext.addEventListener('click', function() {
+    var next = shiftMonth(viewMonth, 1);
+    if (next > currentMonthKey()) return; // 미래 차단
+    viewMonth = next;
+    renderMain();
   });
 
   weeksEl.addEventListener('click', function(e) {
@@ -1428,11 +1667,24 @@
     else if (e.key === 'Escape') { e.preventDefault(); clearAddCatPanel(); }
   });
 
+  // Data section
+  dataActionsEl.addEventListener('click', function(e) {
+    var action = e.target.dataset && e.target.dataset.action;
+    if (action === 'export') handleExport();
+    else if (action === 'import') importInput.click();
+    else if (action === 'reset') handleReset();
+  });
+  importInput.addEventListener('change', function(e) {
+    var file = e.target.files && e.target.files[0];
+    handleImportFile(file);
+    e.target.value = '';
+  });
+
   // ===== Init =====
   state = loadStateLocal();
+  viewMonth = currentMonthKey();
   renderMain();
 
-  // 초기 로컬 렌더링 직후 클라우드 동기화 시도 (URL 파라미터·Worker URL 모두 있을 때만)
   initCloudSync(function(remote) {
     cloudApplyingRemote = true;
     state = migrate(remote);
