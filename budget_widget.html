@@ -948,9 +948,9 @@
       </div>
     </section>
 
-    <section class="cat-bars-section">
+    <section class="home-donut-section">
       <h2 class="section-title">카테고리 비율</h2>
-      <div class="cat-bars-host"></div>
+      <div class="home-donut-host"></div>
     </section>
 
     <section class="pace-section">
@@ -1211,6 +1211,8 @@
     el.textContent = icon;
     el.dataset.tone = tone || '';
     if (title) el.title = title;
+    // 클라우드 동기화 비활성(⌂)이면 인디케이터 자체를 숨김
+    el.hidden = (icon === '⌂');
   }
 
   function cloudLoad() {
@@ -1411,7 +1413,7 @@
   var entryInput = screenHome.querySelector('#entry');
   var addBtn = screenHome.querySelector('#add-btn');
   var quickDatesEl = screenHome.querySelector('.quick-dates');
-  var catBarsHost = screenHome.querySelector('.cat-bars-host');
+  var homeDonutHost = screenHome.querySelector('.home-donut-host');
   var paceHost = screenHome.querySelector('.pace-host');
   var txListEl = screenHome.querySelector('.tx-list');
   var emptyStateEl = screenHome.querySelector('.empty-state');
@@ -1487,35 +1489,41 @@
     homeHeroMeta.textContent = '/ ' + formatMoney(limit) + ' · ' + pct + '%';
   }
 
-  function renderCatBars() {
-    var month = currentMonthKey();
-    var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === month; });
+  function renderDonutInto(host, mk) {
+    var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === mk; });
     var totalSpent = monthTxs.reduce(function(s,t) { return s + t.amount; }, 0);
+    var limit = state.meta.monthLimit;
+    var centerPct = limit > 0 ? Math.round((totalSpent / limit) * 100) : 0;
+
+    var items = state.categories.map(function(cat) {
+      var sum = monthTxs.filter(function(t) { return t.categoryId === cat.id; })
+        .reduce(function(s,t) { return s + t.amount; }, 0);
+      return { cat: cat, amount: sum, color: cat.color };
+    });
 
     if (totalSpent === 0) {
-      catBarsHost.innerHTML = '<div class="cat-bars-empty">이 달 카테고리 기록이 없어요</div>';
+      host.innerHTML = '<div class="cat-summary-empty">이 달 카테고리 기록이 없어요</div>';
       return;
     }
 
-    var rows = state.categories.map(function(cat) {
-      var sum = monthTxs.filter(function(t) { return t.categoryId === cat.id; })
-        .reduce(function(s,t) { return s + t.amount; }, 0);
-      return { cat: cat, amount: sum };
-    }).sort(function(a, b) { return b.amount - a.amount; });
-
-    var html = rows.map(function(it) {
-      var pct = totalSpent > 0 ? (it.amount / totalSpent) * 100 : 0;
-      var widthPct = Math.max(pct, it.amount > 0 ? 2 : 0); // 최소 가시성 2%
-      var color = (COLOR_HEX[it.cat.color] || COLOR_HEX.gray).text;
+    var sortedForLabels = items.slice().sort(function(a, b) { return b.amount - a.amount; });
+    var donutHtml = renderDonut(items, totalSpent, centerPct);
+    var labelsHtml = sortedForLabels.map(function(it) {
+      var pct = totalSpent > 0 ? Math.round((it.amount / totalSpent) * 100) : 0;
+      var c = (COLOR_HEX[it.color] || COLOR_HEX.gray).text;
       var emoji = it.cat.emoji ? escapeHtml(it.cat.emoji) + ' ' : '';
-      return '<div class="cat-bar-row">' +
+      return '<div class="cat-label">' +
+        '<span class="dot" style="background:' + c + '"></span>' +
         '<span class="name">' + emoji + escapeHtml(it.cat.name) + '</span>' +
-        '<span class="bar"><span class="bar-fill" style="width: ' + widthPct.toFixed(1) + '%; background: ' + color + '"></span></span>' +
-        '<span class="amount">' + formatMoney(it.amount) + '</span>' +
+        '<span class="pct">' + pct + '%</span>' +
       '</div>';
     }).join('');
 
-    catBarsHost.innerHTML = '<div class="cat-bars">' + html + '</div>';
+    host.innerHTML =
+      '<div class="cat-summary">' +
+        '<div class="donut-wrap">' + donutHtml + '</div>' +
+        '<div class="cat-labels">' + labelsHtml + '</div>' +
+      '</div>';
   }
 
   function renderPaceCard() {
@@ -1619,7 +1627,7 @@
 
   function renderHome() {
     renderHomeHero();
-    renderCatBars();
+    renderDonutInto(homeDonutHost, currentMonthKey());
     renderPaceCard();
     renderHomeTransactions();
   }
@@ -1656,40 +1664,7 @@
   }
 
   function renderStatsDonut() {
-    var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === viewMonth; });
-    var totalSpent = monthTxs.reduce(function(s,t) { return s + t.amount; }, 0);
-    var limit = state.meta.monthLimit;
-    var centerPct = limit > 0 ? Math.round((totalSpent / limit) * 100) : 0;
-
-    var items = state.categories.map(function(cat) {
-      var sum = monthTxs.filter(function(t) { return t.categoryId === cat.id; })
-        .reduce(function(s,t) { return s + t.amount; }, 0);
-      return { cat: cat, amount: sum, color: cat.color };
-    });
-
-    if (totalSpent === 0) {
-      catDonutHost.innerHTML = '<div class="cat-summary-empty">이 달 카테고리 기록이 없어요</div>';
-      return;
-    }
-
-    var sortedForLabels = items.slice().sort(function(a, b) { return b.amount - a.amount; });
-    var donutHtml = renderDonut(items, totalSpent, centerPct);
-    var labelsHtml = sortedForLabels.map(function(it) {
-      var pct = totalSpent > 0 ? Math.round((it.amount / totalSpent) * 100) : 0;
-      var c = (COLOR_HEX[it.color] || COLOR_HEX.gray).text;
-      var emoji = it.cat.emoji ? escapeHtml(it.cat.emoji) + ' ' : '';
-      return '<div class="cat-label">' +
-        '<span class="dot" style="background:' + c + '"></span>' +
-        '<span class="name">' + emoji + escapeHtml(it.cat.name) + '</span>' +
-        '<span class="pct">' + pct + '%</span>' +
-      '</div>';
-    }).join('');
-
-    catDonutHost.innerHTML =
-      '<div class="cat-summary">' +
-        '<div class="donut-wrap">' + donutHtml + '</div>' +
-        '<div class="cat-labels">' + labelsHtml + '</div>' +
-      '</div>';
+    renderDonutInto(catDonutHost, viewMonth);
   }
 
   function renderWeeks() {
