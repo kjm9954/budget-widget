@@ -1428,7 +1428,8 @@
   'use strict';
 
   // ===== Cloud sync constants =====
-  var WORKER_URL = 'REPLACE-ME';
+  var WORKER_URL = 'https://notion-widgets-api.wldnjsdkk.workers.dev';
+  var WIDGET_API_KEY = '';
   var SAVE_DEBOUNCE_MS = 1500;
 
   // ===== Schema =====
@@ -1621,8 +1622,8 @@
       var sp = new URLSearchParams(location.search);
       var hashRaw = (location.hash || '').replace(/^#/, '');
       var hp = new URLSearchParams(hashRaw);
-      cloudPageId = sp.get('np') || sp.get('page') || hp.get('np') || hp.get('page') || null;
-      cloudKey = sp.get('nk') || hp.get('nk') || null;
+      cloudPageId = sp.get('np') || sp.get('page') || hp.get('np') || hp.get('page') || 'main';
+      cloudKey = sp.get('nk') || sp.get('key') || hp.get('nk') || hp.get('key') || WIDGET_API_KEY || null;
       var workerOk = typeof WORKER_URL === 'string' && WORKER_URL && WORKER_URL.indexOf('REPLACE-ME') === -1;
       cloudEnabled = !!(cloudPageId && workerOk);
     } catch (e) { cloudEnabled = false; }
@@ -1635,7 +1636,7 @@
   }
 
   function cloudUrl() {
-    return WORKER_URL.replace(/\/+$/, '') + '/?p=' + encodeURIComponent(cloudPageId);
+    return WORKER_URL.replace(/\/+$/, '') + '/budget-state?space=' + encodeURIComponent(cloudPageId);
   }
 
   function setCloudStatus(icon, tone, title) {

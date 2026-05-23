@@ -1,177 +1,272 @@
-/* =========================================================================
-   Budget Widget — Cloudflare Worker 프록시 (Notion API 중계)
-   Notion API는 브라우저 CORS를 막아 직접 호출 불가 → 이 Worker가 프록시.
+const ALLOWED_ORIGIN = "https://kjm9954.github.io";
 
-   WorkLog 의 cloudflare-worker.js 와 동일 패턴이며 노션 페이지 안에 만들
-   toggle 블록의 라벨만 다릅니다 ("Budget State (do not edit)").
-   같은 노션 페이지에 WorkLog 와 Budget 위젯을 동시에 임베드해도 충돌 X.
+function corsHeaders(origin) {
+  return {
+    "Access-Control-Allow-Origin": origin === ALLOWED_ORIGIN ? origin : ALLOWED_ORIGIN,
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Widget-Key",
+    "Content-Type": "application/json; charset=utf-8",
+  };
+}
 
-   ── 배포 방법 ───────────────────────────────────────────────────────────
-   1) https://dash.cloudflare.com → Workers & Pages → Create → Worker
-   2) 이 파일 전체를 "Edit code"에 붙여넣고 Save & Deploy
-   3) Settings → Variables 에서 아래 환경변수 추가:
-        NOTION_TOKEN    = (Notion Integration 토큰, "Encrypt" 체크)
-        WIDGET_SECRET   = (임의의 긴 랜덤 문자열, "Encrypt" 체크, 선택)
-   4) Worker URL 복사 (예: https://budget-sync.<your>.workers.dev)
-   5) budget_widget.html 의 WORKER_URL 상수에 붙여넣고 push
-   6) Notion 페이지 임베드 URL 뒤에 ?np=<page_id>[&nk=<secret>] 추가
-        예: https://kjm9954.github.io/budget-widget/budget_widget.html?np=abcd1234...&nk=mySecret
-   7) Notion 에서 통합(Integration)을 해당 페이지에 Connect
-   ───────────────────────────────────────────────────────────────────────
-
-   엔드포인트
-     GET  /?p=<page_id>   → toggle("Budget State") 내부 code 블록 JSON 반환
-     PUT  /?p=<page_id>   (body: state JSON) → toggle 내부 code 블록 덮어쓰기
-                            없으면 toggle+code 생성
-   요청 헤더
-     X-Widget-Key: <WIDGET_SECRET>  (WIDGET_SECRET 설정 시 필수)
-   ========================================================================= */
-
-const NOTION_VERSION = '2022-06-28';
-const CODE_LANGUAGE = 'json';
-const RICH_TEXT_MAX = 2000;
-const TOGGLE_LABEL = 'Budget State (do not edit)';
-
-export default {
-  async fetch(request, env) {
-    const cors = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, X-Widget-Key',
-      'Access-Control-Max-Age': '86400',
-    };
-    if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
-
-    const url = new URL(request.url);
-    const pageId = url.searchParams.get('p');
-    if (!pageId) return json({ error: 'missing query param: p' }, 400, cors);
-    if (!env.NOTION_TOKEN) return json({ error: 'server misconfig: NOTION_TOKEN not set' }, 500, cors);
-
-    if (env.WIDGET_SECRET) {
-      const key = request.headers.get('X-Widget-Key');
-      if (key !== env.WIDGET_SECRET) return json({ error: 'unauthorized' }, 401, cors);
-    }
-
-    const notion = (path, opts = {}) => fetch('https://api.notion.com/v1' + path, {
-      ...opts,
-      headers: {
-        'Authorization': 'Bearer ' + env.NOTION_TOKEN,
-        'Notion-Version': NOTION_VERSION,
-        'Content-Type': 'application/json',
-        ...(opts.headers || {}),
-      },
-    });
-
-    try {
-      if (request.method === 'GET') {
-        const state = await loadState(notion, pageId);
-        return json({ state, ts: Date.now() }, 200, cors);
-      }
-      if (request.method === 'PUT') {
-        const body = await request.json();
-        await saveState(notion, pageId, body);
-        return json({ ok: true, ts: Date.now() }, 200, cors);
-      }
-      return json({ error: 'method not allowed' }, 405, cors);
-    } catch (e) {
-      return json({ error: String(e && e.message || e) }, 500, cors);
-    }
-  },
-};
-
-function json(body, status, headers) {
-  return new Response(JSON.stringify(body), {
-    status, headers: { 'Content-Type': 'application/json', ...headers },
+function json(data, status = 200, origin = ALLOWED_ORIGIN) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: corsHeaders(origin),
   });
 }
 
-async function listChildren(notion, pageId) {
-  const res = await notion(`/blocks/${pageId}/children?page_size=100`);
-  if (!res.ok) throw new Error('notion list failed: ' + res.status + ' ' + await res.text());
-  return res.json();
-}
-
-function readRichText(arr) {
-  return (arr || []).map(r => r.plain_text || '').join('');
-}
-
-function parseCodeJson(codeBlock) {
-  if (!codeBlock) return null;
-  const text = readRichText(codeBlock.code && codeBlock.code.rich_text);
-  if (!text) return null;
-  try { return JSON.parse(text); } catch (e) { return null; }
-}
-
-async function findToggle(notion, pageId) {
-  const data = await listChildren(notion, pageId);
-  const results = data.results || [];
-  const toggle = results.find(b => b && b.type === 'toggle'
-    && readRichText(b.toggle && b.toggle.rich_text).startsWith(TOGGLE_LABEL));
-  return { toggle };
-}
-
-async function loadState(notion, pageId) {
-  const { toggle } = await findToggle(notion, pageId);
-  if (!toggle) return null;
-  const children = await listChildren(notion, toggle.id);
-  const codeBlock = (children.results || []).find(b => b && b.type === 'code');
-  return parseCodeJson(codeBlock);
-}
-
-function buildRichText(text) {
-  const chunks = splitChunks(text, RICH_TEXT_MAX);
-  return chunks.map(c => ({ type: 'text', text: { content: c } }));
-}
-
-async function saveState(notion, pageId, state) {
-  const text = JSON.stringify(state);
-  const richText = buildRichText(text);
-
-  const { toggle } = await findToggle(notion, pageId);
-
-  if (toggle) {
-    const children = await listChildren(notion, toggle.id);
-    const codeBlock = (children.results || []).find(b => b && b.type === 'code');
-    if (codeBlock) {
-      const upd = await notion(`/blocks/${codeBlock.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ code: { rich_text: richText, language: CODE_LANGUAGE } }),
-      });
-      if (!upd.ok) throw new Error('notion patch failed: ' + upd.status + ' ' + await upd.text());
-    } else {
-      const add = await notion(`/blocks/${toggle.id}/children`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          children: [{
-            object: 'block', type: 'code',
-            code: { rich_text: richText, language: CODE_LANGUAGE },
-          }],
-        }),
-      });
-      if (!add.ok) throw new Error('notion append failed: ' + add.status + ' ' + await add.text());
-    }
-  } else {
-    const add = await notion(`/blocks/${pageId}/children`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        children: [{
-          object: 'block', type: 'toggle',
-          toggle: {
-            rich_text: [{ type: 'text', text: { content: TOGGLE_LABEL } }],
-            children: [{
-              object: 'block', type: 'code',
-              code: { rich_text: richText, language: CODE_LANGUAGE },
-            }],
-          },
-        }],
-      }),
-    });
-    if (!add.ok) throw new Error('notion append failed: ' + add.status + ' ' + await add.text());
+async function readJson(request) {
+  try {
+    return await request.json();
+  } catch {
+    return {};
   }
 }
 
-function splitChunks(s, n) {
-  const out = [];
-  for (let i = 0; i < s.length; i += n) out.push(s.slice(i, i + n));
-  return out.length ? out : [''];
+function isAuthorized(request, env) {
+  const key = request.headers.get("X-Widget-Key");
+  return Boolean(env.WIDGET_API_KEY && key === env.WIDGET_API_KEY);
 }
+
+async function ensureBudgetStateTable(env) {
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS budget_states (
+      space TEXT PRIMARY KEY,
+      state TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`
+  ).run();
+}
+
+function parseState(value) {
+  if (!value) return null;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+export default {
+  async fetch(request, env) {
+    const origin = request.headers.get("Origin") || ALLOWED_ORIGIN;
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders(origin) });
+    }
+
+    const url = new URL(request.url);
+    const path = url.pathname;
+    const isBudgetStateRoute = path === "/budget-state" || (path === "/" && url.searchParams.has("p"));
+    const protectedPaths = ["/history", "/record", "/expenses", "/expense"];
+
+    if ((protectedPaths.includes(path) || isBudgetStateRoute) && !isAuthorized(request, env)) {
+      return json({ ok: false, error: "Unauthorized" }, 401, origin);
+    }
+
+    try {
+      if (path === "/history" && request.method === "GET") {
+        const space = url.searchParams.get("space") || "main";
+
+        const result = await env.DB.prepare(
+          `SELECT date, emotions, memo, created_at, updated_at
+           FROM emotion_records
+           WHERE space = ?
+           ORDER BY date DESC`
+        )
+          .bind(space)
+          .all();
+
+        const records = result.results.map((row) => ({
+          date: row.date,
+          emotions: parseState(row.emotions) || [],
+          memo: row.memo || "",
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        }));
+
+        return json(records, 200, origin);
+      }
+
+      if (path === "/record" && request.method === "POST") {
+        const body = await readJson(request);
+        const space = body.space || "main";
+        const date = body.date;
+        const emotions = Array.isArray(body.emotions) ? body.emotions : [];
+        const memo = body.memo || "";
+
+        if (!date) {
+          return json({ ok: false, error: "date is required" }, 400, origin);
+        }
+
+        await env.DB.prepare(
+          `INSERT INTO emotion_records (space, date, emotions, memo, updated_at)
+           VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(space, date)
+           DO UPDATE SET
+             emotions = excluded.emotions,
+             memo = excluded.memo,
+             updated_at = CURRENT_TIMESTAMP`
+        )
+          .bind(space, date, JSON.stringify(emotions), memo)
+          .run();
+
+        return json({ ok: true }, 200, origin);
+      }
+
+      if (path === "/record" && request.method === "PATCH") {
+        const body = await readJson(request);
+        const space = body.space || "main";
+        const oldDate = body.oldDate;
+        const date = body.date;
+
+        if (!oldDate || !date) {
+          return json({ ok: false, error: "oldDate and date are required" }, 400, origin);
+        }
+
+        await env.DB.prepare(
+          `UPDATE emotion_records
+           SET date = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE space = ? AND date = ?`
+        )
+          .bind(date, space, oldDate)
+          .run();
+
+        return json({ ok: true }, 200, origin);
+      }
+
+      if (path === "/record" && request.method === "DELETE") {
+        const body = await readJson(request);
+        const space = body.space || "main";
+        const date = body.date;
+
+        if (!date) {
+          return json({ ok: false, error: "date is required" }, 400, origin);
+        }
+
+        await env.DB.prepare("DELETE FROM emotion_records WHERE space = ? AND date = ?")
+          .bind(space, date)
+          .run();
+
+        return json({ ok: true }, 200, origin);
+      }
+
+      if (path === "/expenses" && request.method === "GET") {
+        const space = url.searchParams.get("space") || "main";
+        const date = url.searchParams.get("date");
+
+        const query = date
+          ? "SELECT * FROM expenses WHERE space = ? AND date = ? ORDER BY created_at DESC"
+          : "SELECT * FROM expenses WHERE space = ? ORDER BY date DESC, created_at DESC";
+
+        const stmt = date
+          ? env.DB.prepare(query).bind(space, date)
+          : env.DB.prepare(query).bind(space);
+
+        const result = await stmt.all();
+        return json(result.results, 200, origin);
+      }
+
+      if (path === "/expense" && request.method === "POST") {
+        const body = await readJson(request);
+        const space = body.space || "main";
+        const date = body.date;
+        const item = body.item || "";
+        const amount = Number(body.amount || 0);
+        const category = body.category || "";
+        const memo = body.memo || "";
+
+        if (!date || !item) {
+          return json({ ok: false, error: "date and item are required" }, 400, origin);
+        }
+
+        await env.DB.prepare(
+          `INSERT INTO expenses (space, date, item, amount, category, memo)
+           VALUES (?, ?, ?, ?, ?, ?)`
+        )
+          .bind(space, date, item, amount, category, memo)
+          .run();
+
+        return json({ ok: true }, 200, origin);
+      }
+
+      if (path === "/expense" && request.method === "PATCH") {
+        const body = await readJson(request);
+        const id = body.id;
+
+        if (!id) {
+          return json({ ok: false, error: "id is required" }, 400, origin);
+        }
+
+        await env.DB.prepare(
+          `UPDATE expenses
+           SET date = ?, item = ?, amount = ?, category = ?, memo = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`
+        )
+          .bind(
+            body.date,
+            body.item || "",
+            Number(body.amount || 0),
+            body.category || "",
+            body.memo || "",
+            id
+          )
+          .run();
+
+        return json({ ok: true }, 200, origin);
+      }
+
+      if (path === "/expense" && request.method === "DELETE") {
+        const body = await readJson(request);
+        const id = body.id;
+
+        if (!id) {
+          return json({ ok: false, error: "id is required" }, 400, origin);
+        }
+
+        await env.DB.prepare("DELETE FROM expenses WHERE id = ?")
+          .bind(id)
+          .run();
+
+        return json({ ok: true }, 200, origin);
+      }
+
+      if (isBudgetStateRoute && request.method === "GET") {
+        const space = url.searchParams.get("space") || url.searchParams.get("p") || "main";
+        await ensureBudgetStateTable(env);
+
+        const row = await env.DB.prepare("SELECT state FROM budget_states WHERE space = ?")
+          .bind(space)
+          .first();
+
+        return json({ state: parseState(row && row.state), ts: Date.now() }, 200, origin);
+      }
+
+      if (isBudgetStateRoute && request.method === "PUT") {
+        const space = url.searchParams.get("space") || url.searchParams.get("p") || "main";
+        const state = await readJson(request);
+        await ensureBudgetStateTable(env);
+
+        await env.DB.prepare(
+          `INSERT INTO budget_states (space, state, updated_at)
+           VALUES (?, ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(space)
+           DO UPDATE SET
+             state = excluded.state,
+             updated_at = CURRENT_TIMESTAMP`
+        )
+          .bind(space, JSON.stringify(state))
+          .run();
+
+        return json({ ok: true, ts: Date.now() }, 200, origin);
+      }
+
+      return json({ ok: true, message: "notion-widgets-api is running" }, 200, origin);
+    } catch (error) {
+      return json({ ok: false, error: String(error.message || error) }, 500, origin);
+    }
+  },
+};
