@@ -1458,7 +1458,7 @@
       <div class="tx-list"></div>
       <div class="empty-state" hidden>
         <div class="empty-icon">📒</div>
-        <div class="empty-message">이 달의 지출이 아직 없어요</div>
+        <div class="empty-message">오늘 지출이 아직 없어요</div>
       </div>
     </section>
   </div>
@@ -2290,12 +2290,9 @@
   }
 
   function renderHomeTransactions() {
-    var month = currentMonthKey();
-    var monthTxs = state.transactions.filter(function(t) { return monthKey(t.date) === month; });
-    var sorted = monthTxs.slice().sort(function(a, b) {
-      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
-      return b.id - a.id;
-    });
+    var today = todayStr();
+    var todayTxs = state.transactions.filter(function(t) { return t.date === today; });
+    var sorted = todayTxs.slice().sort(function(a, b) { return b.id - a.id; });
     if (sorted.length === 0) {
       txListEl.innerHTML = '';
       emptyStateEl.hidden = false;
