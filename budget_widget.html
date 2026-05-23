@@ -3080,8 +3080,14 @@
   });
 
   titleEl.addEventListener('click', showHome);
-  statsBtn.addEventListener('click', showStats);
-  settingsBtn.addEventListener('click', showSettingsScreen);
+  statsBtn.addEventListener('click', function() {
+    if (!screenStats.hidden) showHome();
+    else showStats();
+  });
+  settingsBtn.addEventListener('click', function() {
+    if (!screenSettings.hidden) showHome();
+    else showSettingsScreen();
+  });
   backBtnStats.addEventListener('click', showHome);
   backBtnSettings.addEventListener('click', showHome);
 
