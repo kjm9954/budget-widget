@@ -40,6 +40,17 @@ async function ensureBudgetStateTable(env) {
   ).run();
 }
 
+async function ensureMiniWidgetDateTable(env) {
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS mini_widget_dates (
+      slot TEXT PRIMARY KEY,
+      selected_date TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`
+  ).run();
+}
+
 function parseState(value) {
   if (!value) return null;
 
@@ -61,7 +72,7 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     const isBudgetStateRoute = path === "/budget-state" || (path === "/" && url.searchParams.has("p"));
-    const protectedPaths = ["/history", "/record", "/expenses", "/expense"];
+    const protectedPaths = ["/history", "/record", "/expenses", "/expense", "/mini-date"];
 
     if ((protectedPaths.includes(path) || isBudgetStateRoute) && !isAuthorized(request, env)) {
       return json({ ok: false, error: "Unauthorized" }, 401, origin);
@@ -232,6 +243,41 @@ export default {
           .run();
 
         return json({ ok: true }, 200, origin);
+      }
+
+      if (path === "/mini-date" && request.method === "GET") {
+        const slot = url.searchParams.get("slot") || "default";
+        await ensureMiniWidgetDateTable(env);
+
+        const row = await env.DB.prepare("SELECT selected_date FROM mini_widget_dates WHERE slot = ?")
+          .bind(slot)
+          .first();
+
+        return json({ date: row ? row.selected_date : "" }, 200, origin);
+      }
+
+      if (path === "/mini-date" && request.method === "PUT") {
+        const slot = url.searchParams.get("slot") || "default";
+        const body = await readJson(request);
+        const date = body.date || body.selectedDate;
+
+        if (!date) {
+          return json({ ok: false, error: "date is required" }, 400, origin);
+        }
+
+        await ensureMiniWidgetDateTable(env);
+        await env.DB.prepare(
+          `INSERT INTO mini_widget_dates (slot, selected_date, updated_at)
+           VALUES (?, ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(slot)
+           DO UPDATE SET
+             selected_date = excluded.selected_date,
+             updated_at = CURRENT_TIMESTAMP`
+        )
+          .bind(slot, date)
+          .run();
+
+        return json({ ok: true, date }, 200, origin);
       }
 
       if (isBudgetStateRoute && request.method === "GET") {
