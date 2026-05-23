@@ -239,6 +239,7 @@
 
     /* ===== Quick dates ===== */
     .quick-dates {
+      position: relative;
       display: flex;
       gap: 6px;
       margin-bottom: 8px;
@@ -258,6 +259,95 @@
     .quick-dates button:hover {
       background: var(--color-background-secondary);
       color: var(--color-text-primary);
+    }
+    .quick-dates button.custom-date-btn {
+      flex: 0 0 36px;
+      padding: 0;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    /* ===== Calendar modal ===== */
+    .cal-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+    .cal-modal[hidden] { display: none; }
+    .cal-box {
+      width: min(300px, 100%);
+      background: var(--color-background-primary);
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      padding: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    .cal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .cal-nav {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: transparent;
+      color: var(--color-text-primary);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .cal-nav:hover { background: var(--color-background-secondary); }
+    .cal-title {
+      font-weight: 600;
+      color: var(--color-text-primary);
+      font-size: var(--fs-sm);
+    }
+    .cal-weekdays, .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+    .cal-weekdays { margin-bottom: 4px; }
+    .cal-weekday {
+      text-align: center;
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      padding: 4px 0;
+    }
+    .cal-weekday.sun { color: #e03e3e; }
+    .cal-weekday.sat { color: #2383e2; }
+    .cal-day {
+      aspect-ratio: 1;
+      border: 0;
+      border-radius: var(--border-radius-md);
+      background: transparent;
+      color: var(--color-text-primary);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: var(--fs-sm);
+      padding: 0;
+    }
+    .cal-day:hover:not(:disabled) { background: var(--color-background-secondary); }
+    .cal-day:disabled {
+      color: var(--color-text-muted);
+      opacity: 0.35;
+      cursor: default;
+    }
+    .cal-day.sun { color: #e03e3e; }
+    .cal-day.sat { color: #2383e2; }
+    .cal-day.today {
+      background: var(--color-background-secondary);
+      font-weight: 600;
+      outline: 1px solid var(--color-border-tertiary);
     }
 
     /* ===== Input ===== */
@@ -1288,6 +1378,7 @@
         <button type="button" data-chip="오늘">오늘</button>
         <button type="button" data-chip="어제">어제</button>
         <button type="button" data-chip="그제">그제</button>
+        <button type="button" class="custom-date-btn" aria-label="날짜 선택">+</button>
       </div>
       <div class="input-row">
         <input id="entry" type="text" placeholder="예: 점심 김밥 5,000" autocomplete="off" />
@@ -1419,6 +1510,19 @@
         <button class="emoji-clear" type="button">비우기</button>
         <button class="emoji-cancel" type="button">취소</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== Calendar modal ===== -->
+  <div class="cal-modal" hidden>
+    <div class="cal-box">
+      <div class="cal-head">
+        <button type="button" class="cal-nav" data-nav="-1" aria-label="이전 달">‹</button>
+        <span class="cal-title"></span>
+        <button type="button" class="cal-nav" data-nav="1" aria-label="다음 달">›</button>
+      </div>
+      <div class="cal-weekdays"></div>
+      <div class="cal-grid"></div>
     </div>
   </div>
 </main>
@@ -1806,7 +1910,7 @@
     return '<span class="badge" style="background-color: rgba(' + c.rgb + ', 0.25); color: ' + c.text + '">' + emoji + escapeHtml(category.name) + '</span>';
   }
   function autoCommaText(text) {
-    return text.replace(/\d{1,3}(?:,\d{3})+|\d{4,}/g, function(m) {
+    return text.replace(/\d[\d,]*\d|\d/g, function(m) {
       var n = parseInt(m.replace(/,/g, ''), 10);
       if (!Number.isFinite(n)) return m;
       return n.toLocaleString('ko-KR');
@@ -1822,10 +1926,24 @@
         return { date: offsetDate(k.offset), remainText: text.slice(0, idx) + text.slice(idx + k.word.length) };
       }
     }
+    var md = text.match(/(\d{1,2})월\s*(\d{1,2})일/);
+    if (md) {
+      var now = new Date();
+      var mNum = parseInt(md[1], 10);
+      var dNum = parseInt(md[2], 10);
+      var picked = new Date(now.getFullYear(), mNum - 1, dNum);
+      if (picked.getTime() - now.getTime() > 86400000 * 7) {
+        picked = new Date(now.getFullYear() - 1, mNum - 1, dNum);
+      }
+      return {
+        date: ymd(picked),
+        remainText: text.slice(0, md.index) + text.slice(md.index + md[0].length)
+      };
+    }
     return { date: todayStr(), remainText: text };
   }
   function parseAmount(text) {
-    var re = /\d{1,3}(?:,\d{3})+|\d{3,}/;
+    var re = /\d[\d,]*/;
     var m = text.match(re);
     if (!m) return { amount: null, remainText: text };
     var amount = parseInt(m[0].replace(/,/g, ''), 10);
@@ -2553,7 +2671,7 @@
   // ===== Quick dates =====
   function applyQuickDate(keyword) {
     var v = entryInput.value;
-    v = v.replace(/(그저께|그제|어제|오늘)\s*/g, '').trim();
+    v = v.replace(/(그저께|그제|어제|오늘|\d{1,2}월\s*\d{1,2}일)\s*/g, '').trim();
     entryInput.value = (keyword + (v ? ' ' + v : ' ')).replace(/\s+/g, ' ');
     entryInput.focus();
     var end = entryInput.value.length;
@@ -2822,6 +2940,75 @@
     var btn = e.target.closest('button[data-chip]');
     if (!btn) return;
     applyQuickDate(btn.dataset.chip);
+  });
+
+  var customDateBtn = quickDatesEl.querySelector('.custom-date-btn');
+  var calModal = widget.querySelector('.cal-modal');
+  var calTitle = calModal.querySelector('.cal-title');
+  var calGrid = calModal.querySelector('.cal-grid');
+  var calWeekdaysEl = calModal.querySelector('.cal-weekdays');
+  calWeekdaysEl.innerHTML = ['일','월','화','수','목','금','토'].map(function(d, i) {
+    var cls = i === 0 ? ' sun' : i === 6 ? ' sat' : '';
+    return '<div class="cal-weekday' + cls + '">' + d + '</div>';
+  }).join('');
+  var calViewMonth = currentMonthKey();
+  function renderCalendar() {
+    var p = calViewMonth.split('-');
+    var y = parseInt(p[0], 10);
+    var m = parseInt(p[1], 10);
+    calTitle.textContent = y + '년 ' + m + '월';
+    var firstDow = new Date(y, m - 1, 1).getDay();
+    var dim = daysInMonth(calViewMonth);
+    var prevDim = daysInMonth(shiftMonth(calViewMonth, -1));
+    var today = todayStr();
+    var html = '';
+    for (var i = firstDow - 1; i >= 0; i--) {
+      html += '<button type="button" class="cal-day" disabled>' + (prevDim - i) + '</button>';
+    }
+    for (var d = 1; d <= dim; d++) {
+      var dateStr = y + '-' + pad2(m) + '-' + pad2(d);
+      var dow = new Date(y, m - 1, d).getDay();
+      var cls = 'cal-day';
+      if (dow === 0) cls += ' sun';
+      else if (dow === 6) cls += ' sat';
+      if (dateStr === today) cls += ' today';
+      html += '<button type="button" class="' + cls + '" data-date="' + dateStr + '">' + d + '</button>';
+    }
+    var trailing = (7 - (firstDow + dim) % 7) % 7;
+    for (var j = 1; j <= trailing; j++) {
+      html += '<button type="button" class="cal-day" disabled>' + j + '</button>';
+    }
+    calGrid.innerHTML = html;
+  }
+  function openCalendar() {
+    calViewMonth = currentMonthKey();
+    renderCalendar();
+    calModal.hidden = false;
+  }
+  function closeCalendar() { calModal.hidden = true; }
+  customDateBtn.addEventListener('click', openCalendar);
+  calModal.addEventListener('click', function(e) {
+    if (e.target === calModal) { closeCalendar(); return; }
+    var nav = e.target.closest('.cal-nav');
+    if (nav) {
+      calViewMonth = shiftMonth(calViewMonth, parseInt(nav.dataset.nav, 10));
+      renderCalendar();
+      return;
+    }
+    var day = e.target.closest('.cal-day[data-date]');
+    if (day) {
+      var dateStr = day.dataset.date;
+      var label;
+      if (dateStr === todayStr()) label = '오늘';
+      else if (dateStr === offsetDate(-1)) label = '어제';
+      else if (dateStr === offsetDate(-2)) label = '그제';
+      else {
+        var pp = dateStr.split('-');
+        label = parseInt(pp[1], 10) + '월 ' + parseInt(pp[2], 10) + '일';
+      }
+      applyQuickDate(label);
+      closeCalendar();
+    }
   });
 
   txListEl.addEventListener('click', function(e) {
