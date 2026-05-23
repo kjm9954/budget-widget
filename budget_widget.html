@@ -448,6 +448,33 @@
     .pace-forecast.warn { color: var(--color-warn); }
     .pace-forecast.ok { color: #2ea043; }
 
+    /* ===== Week budget card (home) ===== */
+    .week-budget-card {
+      padding: 12px 14px;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .wb-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: var(--fs-sm);
+    }
+    .wb-label { color: var(--color-text-muted); }
+    .wb-amount {
+      font-weight: bold;
+      font-size: var(--fs-base);
+    }
+    .wb-amount.over { color: var(--color-warn); }
+    .wb-meta {
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+    }
+    .wb-meta.warn { color: var(--color-warn); }
+
     /* ===== Donut chart ===== */
     .cat-summary {
       display: flex;
@@ -1421,6 +1448,11 @@
       <div class="pace-host"></div>
     </section>
 
+    <section class="week-budget-section">
+      <h2 class="section-title">이번 주 한도</h2>
+      <div class="week-budget-host"></div>
+    </section>
+
     <section class="transactions">
       <h2 class="section-title">최근 내역</h2>
       <div class="tx-list"></div>
@@ -2035,6 +2067,7 @@
   var quickDatesEl = screenHome.querySelector('.quick-dates');
   var homeDonutHost = screenHome.querySelector('.home-donut-host');
   var paceHost = screenHome.querySelector('.pace-host');
+  var weekBudgetHost = screenHome.querySelector('.week-budget-host');
   var txListEl = screenHome.querySelector('.tx-list');
   var emptyStateEl = screenHome.querySelector('.empty-state');
 
@@ -2297,10 +2330,49 @@
     }).join('');
   }
 
+  function renderWeekBudget() {
+    var limit = state.meta.weekLimit;
+    var month = currentMonthKey();
+    var today = todayStr();
+    var curWeekIdx = getWeekIndex(today);
+    var weekSum = state.transactions.filter(function(t) {
+      return monthKey(t.date) === month && isInBudgetScope(t) && getWeekIndex(t.date) === curWeekIdx;
+    }).reduce(function(s, t) { return s + t.amount; }, 0);
+
+    if (!limit || limit <= 0) {
+      weekBudgetHost.innerHTML = '<div class="week-budget-card"><div class="wb-meta">주 한도 미설정 (설정 → 주 한도)</div></div>';
+      return;
+    }
+
+    var ratio = weekSum / limit;
+    var widthPct = Math.min(100, ratio * 100);
+    var color = progressColor(ratio, COLOR_HEX.gray.text);
+    var weekLabels = ['1주차 (1~7일)', '2주차 (8~14일)', '3주차 (15~21일)', '4주차 (22일 이후)'];
+    var remaining = limit - weekSum;
+    var statusText, statusClass = '';
+    if (remaining < 0) {
+      statusText = '한도를 ' + formatMoney(-remaining) + ' 초과';
+      statusClass = ' warn';
+    } else {
+      statusText = '한도까지 ' + formatMoney(remaining) + ' 남음';
+    }
+    var amountClass = ratio >= 1 ? ' over' : '';
+    weekBudgetHost.innerHTML =
+      '<div class="week-budget-card">' +
+        '<div class="wb-head">' +
+          '<span class="wb-label">' + weekLabels[curWeekIdx] + '</span>' +
+          '<span class="wb-amount' + amountClass + '">' + formatMoney(weekSum) + ' / ' + formatMoney(limit) + '</span>' +
+        '</div>' +
+        '<div class="progress"><div class="progress-fill" style="width: ' + widthPct + '%; background: ' + color + '"></div></div>' +
+        '<div class="wb-meta' + statusClass + '">' + statusText + '</div>' +
+      '</div>';
+  }
+
   function renderHome() {
     renderHomeHero();
     renderBudgetDonutInto(homeDonutHost, currentMonthKey());
     renderPaceCard();
+    renderWeekBudget();
     renderHomeTransactions();
   }
 
