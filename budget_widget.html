@@ -1665,8 +1665,8 @@
         // 저축
         { id: 12, name: '저축',       emoji: '💵', keywords: ['저축','적금','비상금','입금'], budget: 550000, color: 'green', parentId: null },
 
-        // 기타 (fallback)
-        { id: 13, name: '기타',       emoji: '🔖', keywords: [], budget: 0, color: 'blue', parentId: null }
+        // 기타 (fallback) — 생활비 자식으로 두어 한도 평균에 포함
+        { id: 13, name: '기타',       emoji: '🔖', keywords: [], budget: 0, color: 'blue', parentId: 7 }
       ],
       transactions: [],
       meta: {
@@ -1691,6 +1691,17 @@
     if (typeof loaded.meta.nextTxId !== 'number') loaded.meta.nextTxId = 1;
     if (typeof loaded.meta.nextCatId !== 'number') loaded.meta.nextCatId = 1;
     if (typeof loaded.meta.weekLimit !== 'number') loaded.meta.weekLimit = DEFAULT_WEEK_LIMIT;
+    // 일회성: 기본 '기타'(id=13) 카테고리를 생활비(id=7) 자식으로 이동
+    if (!loaded.meta.etcUnderBudgetMigrated) {
+      for (var ei = 0; ei < loaded.categories.length; ei++) {
+        var ec = loaded.categories[ei];
+        if (ec.id === 13 && ec.name === '기타' && ec.parentId === null) {
+          ec.parentId = 7;
+          break;
+        }
+      }
+      loaded.meta.etcUnderBudgetMigrated = true;
+    }
     // budgetCategoryId 검증: 없거나 잘못됐으면 '생활비' 또는 첫 카테고리
     var hasValid = typeof loaded.meta.budgetCategoryId === 'number' &&
       loaded.categories.some(function(c) { return c.id === loaded.meta.budgetCategoryId; });
@@ -3228,6 +3239,7 @@
 
   // ===== Init =====
   state = loadStateLocal();
+  saveStateLocal();
   viewMonth = currentMonthKey();
   renderHome();
 
