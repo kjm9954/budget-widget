@@ -37,6 +37,26 @@
         --color-progress-track: rgba(255, 255, 255, 0.10);
       }
     }
+    @media (max-width: 820px) {
+      :root {
+        --fs-base: 13px;
+        --fs-sm: 11px;
+        --fs-xs: 10px;
+        --fs-h1: 16px;
+        --fs-amount: 14px;
+        --fs-hero: 22px;
+      }
+    }
+    @media (max-width: 480px) {
+      :root {
+        --fs-base: 12px;
+        --fs-sm: 10px;
+        --fs-xs: 9px;
+        --fs-h1: 15px;
+        --fs-amount: 13px;
+        --fs-hero: 20px;
+      }
+    }
 
     * { box-sizing: border-box; }
     html, body {
@@ -259,6 +279,11 @@
     .quick-dates button:hover {
       background: var(--color-background-secondary);
       color: var(--color-text-primary);
+    }
+    .quick-dates button.active {
+      background: var(--color-background-secondary);
+      color: var(--color-text-primary);
+      border-color: var(--color-text-primary);
     }
     .quick-dates button.custom-date-btn {
       flex: 0 0 36px;
@@ -2669,7 +2694,16 @@
   }
 
   // ===== Quick dates =====
+  var activeDateLabel = null;
+  function updateActiveDateChips() {
+    var btns = quickDatesEl.querySelectorAll('button[data-chip]');
+    btns.forEach(function(b) {
+      b.classList.toggle('active', b.dataset.chip === activeDateLabel);
+    });
+  }
   function applyQuickDate(keyword) {
+    activeDateLabel = keyword;
+    updateActiveDateChips();
     var v = entryInput.value;
     v = v.replace(/(그저께|그제|어제|오늘|\d{1,2}월\s*\d{1,2}일)\s*/g, '').trim();
     entryInput.value = (keyword + (v ? ' ' + v : ' ')).replace(/\s+/g, ' ');
@@ -2704,7 +2738,7 @@
     });
     state.meta.nextTxId += 1;
     saveState();
-    entryInput.value = '';
+    entryInput.value = activeDateLabel ? activeDateLabel + ' ' : '';
     renderHome();
   }
 
