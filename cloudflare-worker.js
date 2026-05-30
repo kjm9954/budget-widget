@@ -51,6 +51,35 @@ async function ensureMiniWidgetDateTable(env) {
   ).run();
 }
 
+async function ensureWorkRetroTables(env) {
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS work_retro_records (
+      space TEXT NOT NULL,
+      date TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT '',
+      category TEXT NOT NULL DEFAULT '',
+      detail TEXT NOT NULL DEFAULT '',
+      next_action TEXT NOT NULL DEFAULT '',
+      impact TEXT NOT NULL DEFAULT 'self',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (space, date)
+    )`
+  ).run();
+
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS work_retro_settings (
+      space TEXT PRIMARY KEY,
+      categories TEXT NOT NULL DEFAULT '[]',
+      history_columns TEXT NOT NULL DEFAULT '{}',
+      selected_date TEXT NOT NULL DEFAULT '',
+      month TEXT NOT NULL DEFAULT '',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`
+  ).run();
+}
+
 function parseState(value) {
   if (!value) return null;
 
@@ -59,6 +88,156 @@ function parseState(value) {
   } catch {
     return null;
   }
+}
+
+function normalizeWorkRetroImpact(value) {
+  return ["self", "team", "external"].includes(value) ? value : "self";
+}
+
+function normalizeWorkRetroStatus(value) {
+  return ["ok", "miss", "skip"].includes(value) ? value : "";
+}
+
+function workRetroRowToRecord(row) {
+  return {
+    date: row.date,
+    status: normalizeWorkRetroStatus(row.status),
+    category: row.category || "",
+    detail: row.detail || "",
+    nextAction: row.next_action || "",
+    impact: normalizeWorkRetroImpact(row.impact),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function workRetroRecordFromBody(body) {
+  return {
+    date: body.date || "",
+    status: normalizeWorkRetroStatus(body.status),
+    category: body.category || "",
+    detail: body.detail || "",
+    nextAction: body.nextAction || body.next_action || "",
+    impact: normalizeWorkRetroImpact(body.impact),
+  };
+}
+
+function workRetroMapToRows(records) {
+  if (!records || typeof records !== "object" || Array.isArray(records)) return [];
+  return Object.entries(records)
+    .filter(([date, record]) => date && record && typeof record === "object")
+    .map(([date, record]) => ({
+      ...workRetroRecordFromBody({ ...record, date }),
+      date,
+    }));
+}
+
+async function readWorkRetroSettings(env, space) {
+  const row = await env.DB.prepare(
+    `SELECT categories, history_columns, selected_date, month
+     FROM work_retro_settings
+     WHERE space = ?`
+  )
+    .bind(space)
+    .first();
+
+  return {
+    categories: parseState(row && row.categories) || [],
+    historyColumns: parseState(row && row.history_columns) || {},
+    selectedDate: (row && row.selected_date) || "",
+    month: (row && row.month) || "",
+  };
+}
+
+async function writeWorkRetroSettings(env, space, body) {
+  const categories = Array.isArray(body.categories) ? body.categories : [];
+  const historyColumns = body.historyColumns && typeof body.historyColumns === "object"
+    ? body.historyColumns
+    : {};
+  const selectedDate = body.selectedDate || "";
+  const month = body.month || "";
+
+  await env.DB.prepare(
+    `INSERT INTO work_retro_settings (space, categories, history_columns, selected_date, month, updated_at)
+     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(space)
+     DO UPDATE SET
+       categories = excluded.categories,
+       history_columns = excluded.history_columns,
+       selected_date = excluded.selected_date,
+       month = excluded.month,
+       updated_at = CURRENT_TIMESTAMP`
+  )
+    .bind(space, JSON.stringify(categories), JSON.stringify(historyColumns), selectedDate, month)
+    .run();
+}
+
+async function readWorkRetroState(env, space) {
+  await ensureWorkRetroTables(env);
+  const result = await env.DB.prepare(
+    `SELECT date, status, category, detail, next_action, impact, created_at, updated_at
+     FROM work_retro_records
+     WHERE space = ?
+     ORDER BY date DESC`
+  )
+    .bind(space)
+    .all();
+
+  const records = {};
+  result.results.forEach((row) => {
+    const record = workRetroRowToRecord(row);
+    records[record.date] = {
+      status: record.status,
+      category: record.category,
+      detail: record.detail,
+      nextAction: record.nextAction,
+      impact: record.impact,
+    };
+  });
+
+  const settings = await readWorkRetroSettings(env, space);
+  if (!Object.keys(records).length && !settings.selectedDate && !settings.month) return null;
+
+  return {
+    schema: "work-retro-widget",
+    version: 1,
+    records,
+    categories: settings.categories,
+    historyColumns: settings.historyColumns,
+    selectedDate: settings.selectedDate,
+    month: settings.month,
+  };
+}
+
+async function replaceWorkRetroState(env, space, state) {
+  await ensureWorkRetroTables(env);
+  const records = workRetroMapToRows(state.records || {});
+  const statements = [
+    env.DB.prepare("DELETE FROM work_retro_records WHERE space = ?").bind(space),
+    env.DB.prepare("DELETE FROM work_retro_settings WHERE space = ?").bind(space),
+  ];
+
+  records.forEach((record) => {
+    statements.push(
+      env.DB.prepare(
+        `INSERT INTO work_retro_records
+         (space, date, status, category, detail, next_action, impact, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+      )
+        .bind(
+          space,
+          record.date,
+          record.status,
+          record.category,
+          record.detail,
+          record.nextAction,
+          record.impact
+        )
+    );
+  });
+
+  await env.DB.batch(statements);
+  await writeWorkRetroSettings(env, space, state);
 }
 
 export default {
@@ -72,13 +251,120 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     const isBudgetStateRoute = path === "/budget-state" || (path === "/" && url.searchParams.has("p"));
-    const protectedPaths = ["/history", "/record", "/expenses", "/expense", "/mini-date"];
+    const protectedPaths = [
+      "/history",
+      "/record",
+      "/expenses",
+      "/expense",
+      "/mini-date",
+      "/work-retro/history",
+      "/work-retro/record",
+      "/work-retro/settings",
+      "/work-retro/state",
+    ];
 
     if ((protectedPaths.includes(path) || isBudgetStateRoute) && !isAuthorized(request, env)) {
       return json({ ok: false, error: "Unauthorized" }, 401, origin);
     }
 
     try {
+      if (path === "/work-retro/history" && request.method === "GET") {
+        const space = url.searchParams.get("space") || "work-retro-main";
+        await ensureWorkRetroTables(env);
+
+        const result = await env.DB.prepare(
+          `SELECT date, status, category, detail, next_action, impact, created_at, updated_at
+           FROM work_retro_records
+           WHERE space = ?
+           ORDER BY date DESC`
+        )
+          .bind(space)
+          .all();
+
+        return json(result.results.map(workRetroRowToRecord), 200, origin);
+      }
+
+      if (path === "/work-retro/state" && request.method === "GET") {
+        const space = url.searchParams.get("space") || "work-retro-main";
+        const state = await readWorkRetroState(env, space);
+        return json({ state, ts: Date.now() }, 200, origin);
+      }
+
+      if (path === "/work-retro/state" && request.method === "PUT") {
+        const body = await readJson(request);
+        const space = body.space || url.searchParams.get("space") || "work-retro-main";
+        await replaceWorkRetroState(env, space, body);
+        return json({ ok: true, ts: Date.now() }, 200, origin);
+      }
+
+      if (path === "/work-retro/settings" && request.method === "GET") {
+        const space = url.searchParams.get("space") || "work-retro-main";
+        await ensureWorkRetroTables(env);
+        return json(await readWorkRetroSettings(env, space), 200, origin);
+      }
+
+      if (path === "/work-retro/settings" && request.method === "PUT") {
+        const body = await readJson(request);
+        const space = body.space || url.searchParams.get("space") || "work-retro-main";
+        await ensureWorkRetroTables(env);
+        await writeWorkRetroSettings(env, space, body);
+        return json({ ok: true, ts: Date.now() }, 200, origin);
+      }
+
+      if (path === "/work-retro/record" && request.method === "POST") {
+        const body = await readJson(request);
+        const space = body.space || "work-retro-main";
+        const record = workRetroRecordFromBody(body);
+
+        if (!record.date) {
+          return json({ ok: false, error: "date is required" }, 400, origin);
+        }
+
+        await ensureWorkRetroTables(env);
+        await env.DB.prepare(
+          `INSERT INTO work_retro_records
+           (space, date, status, category, detail, next_action, impact, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(space, date)
+           DO UPDATE SET
+             status = excluded.status,
+             category = excluded.category,
+             detail = excluded.detail,
+             next_action = excluded.next_action,
+             impact = excluded.impact,
+             updated_at = CURRENT_TIMESTAMP`
+        )
+          .bind(
+            space,
+            record.date,
+            record.status,
+            record.category,
+            record.detail,
+            record.nextAction,
+            record.impact
+          )
+          .run();
+
+        return json({ ok: true, record }, 200, origin);
+      }
+
+      if (path === "/work-retro/record" && request.method === "DELETE") {
+        const body = await readJson(request);
+        const space = body.space || "work-retro-main";
+        const date = body.date;
+
+        if (!date) {
+          return json({ ok: false, error: "date is required" }, 400, origin);
+        }
+
+        await ensureWorkRetroTables(env);
+        await env.DB.prepare("DELETE FROM work_retro_records WHERE space = ? AND date = ?")
+          .bind(space, date)
+          .run();
+
+        return json({ ok: true, date }, 200, origin);
+      }
+
       if (path === "/history" && request.method === "GET") {
         const space = url.searchParams.get("space") || "main";
 
